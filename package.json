@@ -14,7 +14,8 @@
     "database",
     "platform-independent",
     "filesystem",
-    "persistent"
+    "persistent",
+    "electron"
   ],
   "main": "dist/node-sqlite3-wasm.js",
   "scripts": {
