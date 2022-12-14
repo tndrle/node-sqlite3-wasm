@@ -41,16 +41,10 @@ npm install tndrle/node-sqlite3-wasm
 ```
 
 To use it run
-```js
-const sqlite = require("node-sqlite3-wasm");
-const db = new sqlite.Database("database.db");
-```
-
-or
 
 ```js
-import sqlite from "node-sqlite3-wasm";
-const db = new sqlite.Database("database.db");
+const { Database } = require("node-sqlite3-wasm");
+const db = new Database("database.db");
 ```
 
 **Important:** _node-sqlite3-wasm_ is not fully garbage-collected. You **have to
@@ -71,8 +65,8 @@ finalizing it.
 ## Example
 
 ```js
-import sqlite from "node-sqlite3-wasm";
-const db = new sqlite.Database("database.db");
+const { Database } = require("node-sqlite3-wasm");
+const db = new Database("database.db");
 
 db.exec(
   "DROP TABLE IF EXISTS employees; " +
