@@ -43,6 +43,7 @@ EMFLAGS = \
 	-s ENVIRONMENT=node \
 	-s FILESYSTEM=0 \
 	-s WASM_BIGINT \
+	-s WASM_ASYNC_COMPILATION=0 \
 	-O3
 
 all: dist/node-sqlite3-wasm.js
@@ -51,6 +52,7 @@ dist/node-sqlite3-wasm.js: $(OBJECT_FILES) $(EXPORTED_FUNCS_JSON) $(JS_PRE_FILES
 	mkdir -p dist
 	emcc $(EMFLAGS) $(OBJECT_FILES) --js-library $(JS_LIB_FILES) \
 		$(foreach f,$(JS_PRE_FILES),--pre-js $(f)) -o $@
+	sed -i -E 's/^\}\)\(\);$$/})()();/' $@  # resolve factory
 
 build/sqlite3.o: $(SQLITE_SRC_FILES)
 	mkdir -p build

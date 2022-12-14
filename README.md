@@ -40,23 +40,16 @@ To install _node-sqlite3-wasm_, run
 npm install tndrle/node-sqlite3-wasm
 ```
 
-_node-sqlite3-wasm_ consists of two files: `node-sqlite3-wasm.wasm` and
-`node-sqlite3-wasm.js`. The file `node-sqlite3-wasm.js` loads
-`node-sqlite3-wasm.wasm` once you require/import _node-sqlite3-wasm_. Since this
-takes some time, you have to initialize _node-sqlite3-wasm_ with a `Promise`:
-
+To use it run
 ```js
-const loadSQLite = require("node-sqlite3-wasm");
-loadSQLite().then((sqlite) => {
-  const db = new sqlite.Database("database.db");
-});
+const sqlite = require("node-sqlite3-wasm");
+const db = new sqlite.Database("database.db");
 ```
 
 or
 
 ```js
-import loadSQLite from "node-sqlite3-wasm";
-const sqlite = await loadSQLite();
+import sqlite from "node-sqlite3-wasm";
 const db = new sqlite.Database("database.db");
 ```
 
@@ -78,8 +71,7 @@ finalizing it.
 ## Example
 
 ```js
-import loadSQLite from "node-sqlite3-wasm";
-const sqlite = await loadSQLite();
+import sqlite from "node-sqlite3-wasm";
 const db = new sqlite.Database("database.db");
 
 db.exec(

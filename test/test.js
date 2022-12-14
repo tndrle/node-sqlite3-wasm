@@ -1,12 +1,11 @@
 "use strict";
 
-import loadSQLite from "../dist/node-sqlite3-wasm.js";
-import assert from "assert/strict"
-import fs from "fs";
+import sqlite from "../dist/node-sqlite3-wasm.js";
+import assert from "node:assert/strict";
+import fs from "node:fs";
 
-const sql = await loadSQLite();
-const Database = sql.Database;
-const SQLite3Error = sql.SQLite3Error;
+const Database = sqlite.Database;
+const SQLite3Error = sqlite.SQLite3Error;
 
 describe("open database", function () {
   before(async function () {
