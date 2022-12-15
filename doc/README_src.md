@@ -129,11 +129,11 @@ Arguments
     be thrown.
 
 ```js
-const db = new sqlite.Database("database.db");
+const db = new Database("database.db");
 ```
 
 ```js
-const db = new sqlite.Database("database.db", { fileMustExist: true });
+const db = new Database("database.db", { fileMustExist: true });
 ```
 
 ### `Database.all(sql, [values, options]) -> rows`
@@ -224,7 +224,7 @@ Arguments
 - `values` (optional): values to bind to the statement's parameters. Either a
   single value, an array, or an object in case of named parameters.
 - `options` (optional)
-  - `expand` (default: `false`): if `true`, each returned row is a nested object
+  - `expand` (default: `false`): if `true`, the returned row is a nested object
     with keys corresponding to tables in the query. If a result column is an
     expression or subquery, it will be returned under the key `$`.
 
@@ -390,7 +390,7 @@ Arguments
 - `values` (optional): values to bind to the statement's parameters. Either a
   single value, an array, or an object in case of named parameters.
 - `options` (optional)
-  - `expand` (default: `false`): if `true`, each returned row is a nested object
+  - `expand` (default: `false`): if `true`, the returned row is a nested object
     with keys corresponding to tables in the query. If a result column is an
     expression or subquery, it will be returned under the key `$`.
 
