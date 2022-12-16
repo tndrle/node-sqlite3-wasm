@@ -18,13 +18,17 @@
     "electron"
   ],
   "main": "dist/node-sqlite3-wasm.js",
+  "files": [
+    "dist/node-sqlite3-wasm.js",
+    "dist/node-sqlite3-wasm.wasm"
+  ],
   "scripts": {
     "test": "mocha",
-    "build": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:3.1.28 make",
+    "build:dist": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:3.1.28 make",
     "build:doc": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:3.1.28 python3 doc/create_readme.py",
-    "clean": "rm -rf build dist",
-    "clean:aux": "rm -rf build sqlite-src",
-    "clean:all": "rm -rf build dist sqlite-src"
+    "build": "npm run build:dist && npm run build:doc",
+    "clean:build": "rm -rf build dist",
+    "clean": "rm -rf build dist sqlite-src"
   },
   "devDependencies": {
     "mocha": "^10.1.0"
