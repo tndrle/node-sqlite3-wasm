@@ -1,5 +1,7 @@
 **_node-sqlite3-wasm_**
 
+[![npm](https://img.shields.io/npm/v/node-sqlite3-wasm.svg)](https://www.npmjs.com/package/node-sqlite3-wasm)
+
 # WebAssembly build of SQLite3 for Node.js
 
 **_node-sqlite3-wasm_** is a port of [SQLite3](https://www.sqlite.org/) to
