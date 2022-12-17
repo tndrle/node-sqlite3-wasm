@@ -37,7 +37,7 @@ particular, it does not support
 To install _node-sqlite3-wasm_, run
 
 ```
-npm install tndrle/node-sqlite3-wasm
+npm install node-sqlite3-wasm
 ```
 
 To use it run
