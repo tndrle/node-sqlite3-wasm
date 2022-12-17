@@ -1,0 +1,25 @@
+name: "Check SQLite version"
+on:
+  schedule:
+    - cron: "30 16 * * *"
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: >
+          cat Makefile
+          | grep -m 1 -P 'amalgamation-\d+\.zip'
+          | perl -pe 's/.*amalgamation-(\d+)\.zip.*/\1/'
+          > current.txt
+      - run: >
+          curl -LsS https://www.sqlite.org/download.html
+          | grep -m 1 -P 'amalgamation-\d+\.zip'
+          | perl -pe 's/.*amalgamation-(\d+)\.zip.*/\1/'
+          > newest.txt
+      - run: |
+          echo "Newest SQLite3 version"
+          cat newest.txt
+          echo "Currently used version"
+          cat current.txt
+          diff newest.txt current.txt
