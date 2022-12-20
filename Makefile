@@ -10,7 +10,7 @@ JS_LIB_FILES = src/vfs.js
 OBJECT_FILES = build/sqlite3.o build/vfs.o
 EXPORTED_FUNCS_JSON = build/exp_funcs.json
 
-SQLITE_COMPILATION_FLAGS = \
+SQLITE_FLAGS = \
 	-DSQLITE_OMIT_DEPRECATED \
 	-DSQLITE_OMIT_LOAD_EXTENSION \
 	-DSQLITE_OMIT_UTF16 \
@@ -31,7 +31,9 @@ SQLITE_COMPILATION_FLAGS = \
 	-DSQLITE_TEMP_STORE=3 \
 	-DSQLITE_OS_OTHER=1
 
-EMFLAGS = \
+EM_FLAGS = -O3 -flto
+
+LINK_FLAGS = \
 	-s EXPORTED_FUNCTIONS=@$(EXPORTED_FUNCS_JSON) \
 	-s EXPORTED_RUNTIME_METHODS=cwrap,stackAlloc,addFunction,removeFunction \
 	-s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=['$$addFunction','$$removeFunction'] \
@@ -43,30 +45,30 @@ EMFLAGS = \
 	-s ENVIRONMENT=node \
 	-s FILESYSTEM=0 \
 	-s WASM_BIGINT \
-	-s WASM_ASYNC_COMPILATION=0 \
-	-O3
+	-s WASM_ASYNC_COMPILATION=0
 
 all: dist/node-sqlite3-wasm.js
 
 dist/node-sqlite3-wasm.js: $(OBJECT_FILES) $(EXPORTED_FUNCS_JSON) $(JS_PRE_FILES) $(JS_LIB_FILES)
 	mkdir -p dist
-	emcc $(EMFLAGS) $(OBJECT_FILES) --js-library $(JS_LIB_FILES) \
+	emcc $(LINK_FLAGS) $(EM_FLAGS) $(OBJECT_FILES) --js-library $(JS_LIB_FILES) \
 		$(foreach f,$(JS_PRE_FILES),--pre-js $(f)) -o $@
 	sed -i -E 's/^\}\)\(\);$$/})()();/' $@  # resolve factory
 
 build/sqlite3.o: $(SQLITE_SRC_FILES)
 	mkdir -p build
-	emcc $(SQLITE_COMPILATION_FLAGS) -c $< -o $@
+	emcc $(EM_FLAGS) $(SQLITE_FLAGS) -c $< -o $@
 
 build/vfs.o: src/vfs.c sqlite-src/sqlite3.h
 	mkdir -p build
-	emcc $(SQLITE_COMPILATION_FLAGS) -I sqlite-src -c $< -o $@
+	emcc $(EM_FLAGS) $(SQLITE_FLAGS) -I sqlite-src -c $< -o $@
 
 $(EXPORTED_FUNCS_JSON): src/api.js
 	mkdir -p build
 	echo '[' > $@
-	grep -E '^let sqlite3_[A-z0-9_]+;$$' $< | sed -r 's/let (sqlite3_[A-z0-9_]+);/"_\1",/' >> $@
-	echo '"_malloc","_free"]' >> $@
+	grep -E '^let sqlite3_[A-z0-9_]+;$$' $< | sed -r 's/let (sqlite3_[A-z0-9_]+);/"_\1"/' | \
+		paste -sd "," - >> $@
+	echo ']' >> $@
 
 .PHONY: download
 download: $(SQLITE_SRC_FILES)

@@ -119,7 +119,7 @@ Module.onRuntimeInitialized = () => {
   sqlite3_bind_text = cwrap("sqlite3_bind_text", "number", [
     "number",
     "number",
-    "number",
+    "string",
     "number",
     "number",
   ]);
@@ -390,7 +390,6 @@ class Statement {
     if (this._ptr === NULL) throw new SQLite3Error("Nothing to prepare");
 
     this._db = db;
-    this._buffers = [];
   }
 
   get database() {
@@ -429,16 +428,10 @@ class Statement {
   }
 
   _reset() {
-    this._freeBuffers();
     return (
       sqlite3_clear_bindings(this._ptr) === SQLITE_OK &&
       sqlite3_reset(this._ptr) === SQLITE_OK
     );
-  }
-
-  _freeBuffers() {
-    for (const ptr of this._buffers) _free(ptr);
-    this._buffers = [];
   }
 
   _queryRows(values, single, expand) {
@@ -550,11 +543,13 @@ class Statement {
     let ret;
     switch (typeof value) {
       case "string":
-        const lengthBytes = lengthBytesUTF8(value) + 1;
-        const buffer = _malloc(lengthBytes);
-        this._buffers.push(buffer);
-        stringToUTF8(value, buffer, lengthBytes);
-        ret = sqlite3_bind_text(this._ptr, position, buffer, -1, NULL);
+        ret = sqlite3_bind_text(
+          this._ptr,
+          position,
+          value,
+          -1,
+          SQLITE_TRANSIENT
+        );
         break;
       case "number":
         if (isInt32(value)) {
