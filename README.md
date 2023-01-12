@@ -42,7 +42,7 @@ To install _node-sqlite3-wasm_, run
 npm install node-sqlite3-wasm
 ```
 
-To use it run
+To use it, run
 
 ```js
 const { Database } = require("node-sqlite3-wasm");
