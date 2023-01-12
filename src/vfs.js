@@ -88,14 +88,18 @@ mergeInto(LibraryManager.library, {
       if (err.code != "ENOENT") return SQLITE_IOERR_DELETE;
     }
     if (dirSync) {
-      let fd;
+      let fd = -1;
       try {
         fd = fs.openSync(path.dirname(pathStr), "r");
         fs.fsyncSync(fd);
       } catch {
         return SQLITE_IOERR_FSYNC;
       } finally {
-        fs.closeSync(fd);
+        try {
+          fs.closeSync(fd);
+        } catch {
+          return SQLITE_IOERR_FSYNC;
+        }
       }
     }
     return SQLITE_OK;
