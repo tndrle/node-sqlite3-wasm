@@ -32,7 +32,6 @@ particular, it does not support
 - Temporary files (this is why _node-sqlite3-wasm_ is compiled with the
   `SQLITE_TEMP_STORE=3` flag)
 - Binary large objects (BLOBs)
-- BigInt
 
 ## Getting Started
 
@@ -275,8 +274,11 @@ finalizing it.
 
 Creates a prepared statement, executes it with the given values and returns an
 object with the properties `changes` and `lastInsertRowid` describing the number
-of modified rows and the id of the last row inserted. The prepared statement is
-finalized automatically.
+of modified rows and the id of the last row inserted. `lastInsertRowid` is a
+[`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt)
+if its value exceeds
+[Number.MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER).
+The prepared statement is finalized automatically.
 
 Arguments
 
@@ -402,7 +404,10 @@ See also [](#db.get)
 
 Executes the prepared statement with the given values and returns an object with
 the properties `changes` and `lastInsertRowid` describing the number of modified
-rows and the id of the last row inserted.
+rows and the id of the last row inserted. `lastInsertRowid` is a
+[`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt)
+if its value exceeds
+[Number.MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER).
 
 Arguments
 
@@ -425,6 +430,23 @@ Property determining whether the statement has been finalized using
 _node-sqlite3-wasm_ throws an `SQLite3Error` whenever an error in SQLite3 occurs
 or when functionality is not supported (e.g. BLOBs). `SQLite3Error` is a
 subclass of `Error`.
+
+## Notes About Numbers
+
+JavaScript's
+[`Number`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number?retiredLocale=de)
+type is a double-precision 64-bit binary format IEEE 754 value. Integers can
+only be represented without loss of precision in the range -2<sup>53</sup> + 1
+to 2<sup>53</sup> - 1, inclusive. SQLite3 works with [8-byte signed
+integers](https://www.sqlite.org/datatype3.html) with a range of -2<sup>63</sup>
+to 2<sup>63</sup> - 1, inclusive. Since this range exceeds the range of safe
+integers in JavaScript, _node-sqlite3-wasm_ automatically converts integers
+outside this safe range to
+[`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt).
+It is your responsibility to ensure that you handle the returned values, whether
+`Number` or `BigInt`, correctly. _node-sqlite3-wasm_ also allows you to input
+`BigInt` values as query parameters, or arguments or return values of
+user-defined functions.
 
 ## Building
 

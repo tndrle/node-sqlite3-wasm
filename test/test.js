@@ -83,9 +83,8 @@ describe("general", function () {
   });
 
   it("insert bigint", function () {
-    assert.throws(() => {
-      this.db.run("INSERT INTO a VALUES (?, ?)", [1n, "a"]);
-    }, SQLite3Error);
+    const r = this.db.run("INSERT INTO a VALUES (?, ?)", [1n, "a"]);
+    assert.strictEqual(r.changes, 1);
   });
 
   it("query all", function () {
@@ -101,6 +100,13 @@ describe("general", function () {
     this.db.run("INSERT INTO a VALUES (?1, ?2)", [99, "x"]);
     const r = this.db.get("SELECT * from a", undefined, { expand: true });
     assert.deepEqual(r, { a: { x: 99, y: "x" } });
+  });
+
+  it("query with BigInt", function () {
+    this.db.exec("DELETE FROM a");
+    this.db.run("INSERT INTO a VALUES (?1, ?2)", [1000000000000000000, "x"]);
+    const r = this.db.get("SELECT x from a");
+    assert.deepEqual(r, { x: 1000000000000000000n });
   });
 
   it("get BLOB", function () {
@@ -134,6 +140,56 @@ describe("general", function () {
   });
 });
 
+describe("numbers", function () {
+  before(async function () {
+    this.db = new Database(":memory:");
+    this.db.exec("CREATE TABLE a (x int, y real)");
+  });
+
+  after(function () {
+    this.db.close();
+  });
+
+  it("test 1", function () {
+    this.db.exec("DELETE FROM a");
+    this.db.run("INSERT INTO a VALUES (?, ?)", [
+      Number.MAX_SAFE_INTEGER,
+      Number.MAX_SAFE_INTEGER + 1,
+    ]);
+    const r = this.db.get("SELECT * FROM a");
+    assert.strictEqual(r.x, Number.MAX_SAFE_INTEGER);
+    assert.strictEqual(r.y, Number.MAX_SAFE_INTEGER + 1);
+    assert.strictEqual(typeof r.x, "number");
+    assert.strictEqual(typeof r.y, "number");
+  });
+
+  it("test 2", function () {
+    this.db.exec("DELETE FROM a");
+    this.db.run("INSERT INTO a VALUES (?, ?)", [
+      BigInt(Number.MAX_SAFE_INTEGER) + 10n,
+      0,
+    ]);
+    const r = this.db.get("SELECT * FROM a");
+    assert.strictEqual(r.x, BigInt(Number.MAX_SAFE_INTEGER) + 10n);
+    assert.strictEqual(r.y, 0);
+    assert.strictEqual(typeof r.x, "bigint");
+    assert.strictEqual(typeof r.y, "number");
+  });
+
+  it("test 3", function () {
+    this.db.exec("DELETE FROM a");
+    this.db.run("INSERT INTO a VALUES (?, ?)", [
+      1.5,
+      BigInt(Number.MAX_SAFE_INTEGER),
+    ]);
+    const r = this.db.get("SELECT * FROM a");
+    assert.strictEqual(r.x, 1.5);
+    assert.strictEqual(r.y, Number.MAX_SAFE_INTEGER);
+    assert.strictEqual(typeof r.x, "number");
+    assert.strictEqual(typeof r.y, "number");
+  });
+});
+
 describe("user-defined function", function () {
   before(async function () {
     this.db = new Database(":memory:");
@@ -145,6 +201,8 @@ describe("user-defined function", function () {
     this.db.function("testobject", () => {
       a: 1;
     });
+    this.db.function("testsafeint", () => Number.MAX_SAFE_INTEGER);
+    this.db.function("testbigint", () => 10000000000000000n);
   });
 
   after(function () {
@@ -191,5 +249,22 @@ describe("user-defined function", function () {
     assert.throws(() => {
       this.db.get("SELECT testobject()");
     }, SQLite3Error);
+  });
+
+  it("safe int return", function () {
+    const r = this.db.get("SELECT testsafeint() as r").r;
+    assert.strictEqual(r, Number.MAX_SAFE_INTEGER);
+  });
+
+  it("BigInt return", function () {
+    const r = this.db.get("SELECT testbigint() as r").r;
+    assert.strictEqual(r, 10000000000000000n);
+  });
+
+  it("BigInt argument", function () {
+    const r = this.db.get(
+      "SELECT testadd(10000000000000000, 10000000000000000) as r"
+    ).r;
+    assert.strictEqual(r, 20000000000000000n);
   });
 });

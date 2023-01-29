@@ -47,3 +47,9 @@ function _fd(fileInfo) {
   // fileInfo: pointer to struct NodeJsFile in file vfs.c
   return getValue(fileInfo + 4, "i32"); // read NodeJsFile.fd
 }
+
+function _safeInt(bigInt) {
+  if (bigInt < Number.MIN_SAFE_INTEGER || bigInt > Number.MAX_SAFE_INTEGER)
+    throw 0;
+  return Number(bigInt);
+}

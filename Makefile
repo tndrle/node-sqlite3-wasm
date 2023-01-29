@@ -5,7 +5,7 @@ SQLITE_URL = https://www.sqlite.org/2022/sqlite-amalgamation-3400100.zip
 SQLITE_HASH = 2618a7f311ce3f8307c45035bce31805185d632241b2af6c250b4531f09edccb
 SQLITE_SRC_FILES = sqlite-src/sqlite3.c sqlite-src/sqlite3.h
 
-JS_PRE_FILES = src/api.js src/common.js src/vfs-pre.js
+JS_PRE_FILES = src/api.js src/vfs-pre.js
 JS_LIB_FILES = src/vfs.js
 OBJECT_FILES = build/sqlite3.o build/vfs.o
 EXPORTED_FUNCS_JSON = build/exp_funcs.json

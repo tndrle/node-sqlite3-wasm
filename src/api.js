@@ -25,8 +25,12 @@
 
 "use strict";
 
+const INT32_MIN = -2147483648;
+const INT32_MAX = 2147483647;
+
 const NULL = 0;
 
+const SQLITE_OK = 0;
 const SQLITE_ROW = 100;
 const SQLITE_DONE = 101;
 const SQLITE_INTEGER = 1;
@@ -50,12 +54,13 @@ let sqlite3_finalize;
 let sqlite3_reset;
 let sqlite3_clear_bindings;
 let sqlite3_bind_int;
+let sqlite3_bind_int64;
 let sqlite3_bind_double;
 let sqlite3_bind_text;
 let sqlite3_bind_null;
 let sqlite3_bind_parameter_index;
 let sqlite3_step;
-let sqlite3_column_int;
+let sqlite3_column_int64;
 let sqlite3_column_double;
 let sqlite3_column_text;
 let sqlite3_column_type;
@@ -66,12 +71,13 @@ let sqlite3_changes;
 let sqlite3_create_function_v2;
 let sqlite3_value_type;
 let sqlite3_value_text;
-let sqlite3_value_int;
+let sqlite3_value_int64;
 let sqlite3_value_double;
 let sqlite3_result_double;
 let sqlite3_result_null;
 let sqlite3_result_text;
 let sqlite3_result_int;
+let sqlite3_result_int64;
 let sqlite3_result_error;
 let sqlite3_column_table_name;
 let sqlite3_get_autocommit;
@@ -111,6 +117,11 @@ Module.onRuntimeInitialized = () => {
     "number",
     "number",
   ]);
+  sqlite3_bind_int64 = cwrap("sqlite3_bind_int64", "number", [
+    "number",
+    "number",
+    "number",
+  ]);
   sqlite3_bind_double = cwrap("sqlite3_bind_double", "number", [
     "number",
     "number",
@@ -133,7 +144,7 @@ Module.onRuntimeInitialized = () => {
     ["number", "string"]
   );
   sqlite3_step = cwrap("sqlite3_step", "number", ["number"]);
-  sqlite3_column_int = cwrap("sqlite3_column_int", "number", [
+  sqlite3_column_int64 = cwrap("sqlite3_column_int64", "number", [
     "number",
     "number",
   ]);
@@ -171,7 +182,7 @@ Module.onRuntimeInitialized = () => {
   ]);
   sqlite3_value_type = cwrap("sqlite3_value_type", "number", ["number"]);
   sqlite3_value_text = cwrap("sqlite3_value_text", "string", ["number"]);
-  sqlite3_value_int = cwrap("sqlite3_value_int", "number", ["number"]);
+  sqlite3_value_int64 = cwrap("sqlite3_value_int64", "number", ["number"]);
   sqlite3_value_double = cwrap("sqlite3_value_double", "number", ["number"]);
   sqlite3_result_double = cwrap("sqlite3_result_double", "", [
     "number",
@@ -185,6 +196,10 @@ Module.onRuntimeInitialized = () => {
     "number",
   ]);
   sqlite3_result_int = cwrap("sqlite3_result_int", "", ["number", "number"]);
+  sqlite3_result_int64 = cwrap("sqlite3_result_int64", "", [
+    "number",
+    "number",
+  ]);
   sqlite3_result_error = cwrap("sqlite3_result_error", "", [
     "number",
     "string",
@@ -199,10 +214,18 @@ Module.onRuntimeInitialized = () => {
   ]);
 };
 
-function isInt32(number) {
-  return (
-    number >= -2147483648 && number <= 2147483647 && Number.isInteger(number)
-  );
+class SQLite3Error extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "SQLite3Error";
+  }
+}
+
+function toNumberOrNot(bigInt) {
+  if (bigInt >= Number.MIN_SAFE_INTEGER && bigInt <= Number.MAX_SAFE_INTEGER) {
+    return Number(bigInt);
+  }
+  return bigInt;
 }
 
 function parseFunctionArguments(argc, argv) {
@@ -213,7 +236,7 @@ function parseFunctionArguments(argc, argv) {
     let arg;
     switch (type) {
       case SQLITE_INTEGER:
-        arg = sqlite3_value_int(ptr);
+        arg = toNumberOrNot(sqlite3_value_int64(ptr));
         break;
       case SQLITE_FLOAT:
         arg = sqlite3_value_double(ptr);
@@ -238,11 +261,18 @@ function setFunctionResult(cx, result) {
       sqlite3_result_int(cx, result ? 1 : 0);
       break;
     case "number":
-      if (isInt32(result)) {
-        sqlite3_result_int(cx, result);
+      if (Number.isSafeInteger(result)) {
+        if (result >= INT32_MIN && result <= INT32_MAX) {
+          sqlite3_result_int(cx, result);
+        } else {
+          sqlite3_result_int64(cx, BigInt(result));
+        }
       } else {
         sqlite3_result_double(cx, result);
       }
+      break;
+    case "bigint":
+      sqlite3_result_int64(cx, result);
       break;
     case "string":
       sqlite3_result_text(cx, result, -1, SQLITE_TRANSIENT);
@@ -407,7 +437,7 @@ class Statement {
     this._step();
     return {
       changes: sqlite3_changes(this._db._ptr),
-      lastInsertRowid: _safeInt(sqlite3_last_insert_rowid(this._db._ptr)),
+      lastInsertRowid: toNumberOrNot(sqlite3_last_insert_rowid(this._db._ptr)),
     };
   }
 
@@ -486,7 +516,7 @@ class Statement {
       const colType = sqlite3_column_type(this._ptr, i);
       switch (colType) {
         case SQLITE_INTEGER:
-          v = sqlite3_column_int(this._ptr, i);
+          v = toNumberOrNot(sqlite3_column_int64(this._ptr, i));
           break;
         case SQLITE_FLOAT:
           v = sqlite3_column_double(this._ptr, i);
@@ -552,11 +582,18 @@ class Statement {
         );
         break;
       case "number":
-        if (isInt32(value)) {
-          ret = sqlite3_bind_int(this._ptr, position, value);
+        if (Number.isSafeInteger(value)) {
+          if (value >= INT32_MIN && value <= INT32_MAX) {
+            ret = sqlite3_bind_int(this._ptr, position, value);
+          } else {
+            ret = sqlite3_bind_int64(this._ptr, position, BigInt(value));
+          }
         } else {
           ret = sqlite3_bind_double(this._ptr, position, value);
         }
+        break;
+      case "bigint":
+        ret = sqlite3_bind_int64(this._ptr, position, value);
         break;
       case "boolean":
         ret = sqlite3_bind_int(this._ptr, position, value ? 1 : 0);
@@ -585,3 +622,4 @@ class Statement {
 }
 
 Module.Database = Database;
+Module.SQLite3Error = SQLite3Error;
