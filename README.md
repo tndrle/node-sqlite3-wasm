@@ -277,7 +277,7 @@ object with the properties `changes` and `lastInsertRowid` describing the number
 of modified rows and the id of the last row inserted. `lastInsertRowid` is a
 [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt)
 if its value exceeds
-[Number.MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER).
+[`Number.MAX_SAFE_INTEGER`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER).
 The prepared statement is finalized automatically.
 
 Arguments
@@ -407,7 +407,7 @@ the properties `changes` and `lastInsertRowid` describing the number of modified
 rows and the id of the last row inserted. `lastInsertRowid` is a
 [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt)
 if its value exceeds
-[Number.MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER).
+[`Number.MAX_SAFE_INTEGER`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER).
 
 Arguments
 
