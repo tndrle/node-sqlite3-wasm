@@ -14,23 +14,22 @@ useful for [Electron](https://www.electronjs.org/) applications.
 The port to WebAssembly that SQLite introduced in version 3.40.0 only targets
 web browsers but not Node.js. Other WebAssembly ports also target Node.js, most
 notably [sql.js](https://github.com/sql-js/sql.js/), but none supports
-persistent storage. There also exist native bindings like
-[better-sqlite3](https://github.com/WiseLibs/better-sqlite3) or
+persistent storage with direct file access. There also exist native bindings
+like [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) or
 [node-sqlite3](https://github.com/TryGhost/node-sqlite3). However, native
 bindings must be recompiled for every target platform or pre-built binaries must
 be shipped. This is tedious, especially for Electron deployments.
 
-_node-sqlite3-wasm_ supports persistent storage by implementing a [SQLite OS
-Interface or "VFS"](https://www.sqlite.org/vfs.html) that translates SQLite file
-access to [Node.js' file system API](https://nodejs.org/api/fs.html).
+_node-sqlite3-wasm_ supports persistent storage with direct file access by
+implementing an [SQLite OS Interface or "VFS"](https://www.sqlite.org/vfs.html)
+that translates SQLite file access to [Node.js' file system
+API](https://nodejs.org/api/fs.html).
 
 _node-sqlite3-wasm_ is a minimal implementation, without much testing. In
 particular, it does not support
 
 - File locking
 - Loading of dynamic extensions
-- Temporary files (this is why _node-sqlite3-wasm_ is compiled with the
-  `SQLITE_TEMP_STORE=3` flag)
 - Binary large objects (BLOBs)
 
 ## Getting Started
