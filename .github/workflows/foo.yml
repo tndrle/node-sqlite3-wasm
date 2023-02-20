@@ -1,0 +1,24 @@
+name: "Foo"
+on: push
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: |
+          touch a.txt
+      - name: Configure git user
+        run: |
+          git config --local user.name "${{ github.actor }}"
+          git config --local user.email "${{ github.actor }}@users.noreply.github.com"
+      - name: Commit
+        run: |
+          git checkout -b update-sqlite-4
+          git add a.txt
+          git commit -m "Update SQLite"
+          git push --set-upstream origin update-sqlite-4
+      - name: Create pull request
+        run: gh pr create --title '[AUTO] New SQLite version' --body 'Update to SQLite version x'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
