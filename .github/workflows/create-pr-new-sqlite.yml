@@ -1,0 +1,55 @@
+name: "Create PR for new SQLite version"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version (e.g. 3400100)"
+        required: true
+      hash:
+        description: "Archive hash"
+        required: true
+      url:
+        description: "URL suffix"
+        required: true
+jobs:
+  check:
+    outputs:
+      exists: ${{ steps.check.outputs.exists }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - id: check
+        run: |
+          exists=$(git ls-remote --heads origin update-sqlite-${{ inputs.version }})
+          if [[ -z ${exists} ]]; then
+            echo "exists=no" >> $GITHUB_OUTPUT
+          else
+            echo "exists=yes" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  create-pr:
+    needs: check
+    if: needs.check.outputs.exists == 'no'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          perl -pi.bak -e "s|^SQLITE_FOLDER\s*=.*|SQLITE_FOLDER = sqlite-amalgamation-${{ inputs.version }}|" Makefile
+          perl -pi.bak -e "s|^SQLITE_URL\s*=.*|SQLITE_URL = https://www.sqlite.org/${{ inputs.url }}|" Makefile
+          perl -pi.bak -e "s|^SQLITE_HASH\s*=.*|SQLITE_HASH = ${{ inputs.hash }}|" Makefile
+          rm Makefile.bak
+      - run: |
+          npm run clean
+          npm run build
+      - run: |
+          msg="Update to SQLite ${{ inputs.version }}"
+          git config --local user.name "${{ github.actor }}"
+          git config --local user.email "${{ github.actor }}@users.noreply.github.com"
+          git checkout -b update-sqlite-${{ inputs.version }}
+          git add -u
+          git commit -m"$msg"
+          git push --set-upstream origin update-sqlite-${{ inputs.version }}
+          gh pr create --title "$msg" --body "$msg"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

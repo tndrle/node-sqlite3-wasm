@@ -1,5 +1,6 @@
 name: "Check SQLite version"
 on:
+  workflow_dispatch:
   schedule:
     - cron: "30 16 * * 5"
 jobs:
@@ -7,19 +8,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: >
-          cat Makefile
-          | grep -m 1 -P 'amalgamation-\d+\.zip'
-          | perl -pe 's/.*amalgamation-(\d+)\.zip.*/\1/'
-          > current.txt
-      - run: >
-          curl -LsS https://www.sqlite.org/download.html
-          | grep -m 1 -P 'amalgamation-\d+\.zip'
-          | perl -pe 's/.*amalgamation-(\d+)\.zip.*/\1/'
-          > newest.txt
-      - run: |
-          echo "Newest SQLite3 version"
-          cat newest.txt
-          echo "Currently used version"
-          cat current.txt
-          diff newest.txt current.txt
+      - run: curl -LsS https://www.sqlite.org/download.html > sqlite.html
+      - id: check
+        run: |
+          import re
+          import os
+          with open('Makefile') as file:
+            current_ver = re.search(r'amalgamation-(\d+)\.zip', file.read()).group(1)
+          with open('sqlite.html') as file:
+            data = file.read()
+            link_id, new_ver, hash = re.search(
+              r'''<tr>.*?<a\s+id=['"](.+?)['"]\s+href=.+?>sqlite-amalgamation-(\d+)\.zip.*?''' +
+                r'\(sha3-256: ([a-f\d]+)\)',
+              data,
+              re.S | re.I
+            ).groups()
+            url = re.search(
+              fr'''\(\s*['"]{link_id}['"]\s*,\s*['"](\d+/sqlite-amalgamation-{new_ver}.zip)['"]\s*\)''',
+              data
+            ).group(1)
+          if current_ver != new_ver:
+            with open(os.getenv('GITHUB_OUTPUT'), 'a') as file:
+              file.write(f'create-pr=yes\n')
+              file.write(f'version={new_ver}\n')
+              file.write(f'hash={hash}\n')
+              file.write(f'url={url}\n')
+        shell: python
+      - if: steps.check.outputs.create-pr == 'yes'
+        run: >
+          gh workflow run create-pr-new-sqlite.yml -f version=${{ steps.check.outputs.version }}
+          -f hash=${{ steps.check.outputs.hash }} -f url=${{ steps.check.outputs.url }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
