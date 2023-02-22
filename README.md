@@ -25,7 +25,7 @@ implementing an [SQLite OS Interface or "VFS"](https://www.sqlite.org/vfs.html)
 that translates SQLite file access to [Node.js' file system
 API](https://nodejs.org/api/fs.html).
 
-_node-sqlite3-wasm_ is a minimal implementation, without much testing. In
+_node-sqlite3-wasm_ is a minimal implementation. In
 particular, it does not support
 
 - File locking
