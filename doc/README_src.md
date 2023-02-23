@@ -1,6 +1,7 @@
 **_node-sqlite3-wasm_**
 
 [![npm](https://img.shields.io/npm/v/node-sqlite3-wasm.svg)](https://www.npmjs.com/package/node-sqlite3-wasm)
+[![SQLite](https://img.shields.io/badge/SQLite-%%sqlite_version%%-blue)](https://www.sqlite.org/index.html)
 
 # WebAssembly build of SQLite3 for Node.js
 
@@ -25,7 +26,8 @@ implementing an [SQLite OS Interface or "VFS"](https://www.sqlite.org/vfs.html)
 that translates SQLite file access to [Node.js' file system
 API](https://nodejs.org/api/fs.html).
 
-_node-sqlite3-wasm_ is a minimal implementation. In
+_node-sqlite3-wasm_ is currently based on SQLite %%sqlite_version%%.
+It is a minimal implementation. In
 particular, it does not support
 
 - File locking
