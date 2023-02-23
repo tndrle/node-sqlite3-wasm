@@ -1,0 +1,38 @@
+name: "Create PR for new emscripten version"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version (e.g. 3.1.31)"
+        required: true
+jobs:
+  check:
+    outputs:
+      exists: ${{ steps.check.outputs.exists }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - id: check
+        run: |
+          lines=$(git ls-remote --heads origin update-emscripten-${{ inputs.version }} | wc -l)
+          echo "exists=$lines" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  create-pr:
+    needs: check
+    if: needs.check.outputs.exists == '0'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          perl -pi.bak -e "s|emscripten/emsdk:\d+\.\d+\.\d+|emscripten/emsdk:${{ inputs.version }}|" package.json
+          rm package.json.bak
+      - run: |
+          npm run clean
+          npm run build
+      - uses: ./.github/actions/create-pr
+        with:
+          branch: update-emscripten-${{ inputs.version }}
+          message: "Update to emscripten ${{ inputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
