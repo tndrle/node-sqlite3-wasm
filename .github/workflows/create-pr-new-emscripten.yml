@@ -5,34 +5,21 @@ on:
       version:
         description: "Version (e.g. 3.1.31)"
         required: true
+env:
+  branch: update-emscripten-${{ inputs.version }}
 jobs:
-  check:
-    outputs:
-      exists: ${{ steps.check.outputs.exists }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - id: check
-        run: |
-          lines=$(git ls-remote --heads origin update-emscripten-${{ inputs.version }} | wc -l)
-          echo "exists=$lines" >> $GITHUB_OUTPUT
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   create-pr:
-    needs: check
-    if: needs.check.outputs.exists == '0'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - run: "! git checkout ${{ env.branch }} -- # branch already exists?"
       - run: |
-          perl -pi.bak -e "s|emscripten/emsdk:\d+\.\d+\.\d+|emscripten/emsdk:${{ inputs.version }}|" package.json
-          rm package.json.bak
-      - run: |
-          npm run clean
-          npm run build
+          perl -pi -e "s|(emscripten/emsdk:)\d+\.\d+\.\d+|\${1}${{ inputs.version }}|" package.json
       - uses: ./.github/actions/create-pr
         with:
-          branch: update-emscripten-${{ inputs.version }}
+          branch: ${{ env.branch }}
           message: "Update to emscripten ${{ inputs.version }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -2,45 +2,35 @@ name: "Create PR for new SQLite version"
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Version (e.g. 3400100)"
+      url:
+        description: "URL suffix (e.g. 2022/sqlite-amalgamation-3400000.zip)"
         required: true
       hash:
         description: "Archive hash"
         required: true
-      url:
-        description: "URL suffix"
-        required: true
 jobs:
-  check:
-    outputs:
-      exists: ${{ steps.check.outputs.exists }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - id: check
-        run: |
-          lines=$(git ls-remote --heads origin update-sqlite-${{ inputs.version }} | wc -l)
-          echo "exists=$lines" >> $GITHUB_OUTPUT
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   create-pr:
-    needs: check
-    if: needs.check.outputs.exists == '0'
     runs-on: ubuntu-latest
     steps:
+      - run: |
+          import re
+          import os
+          v = re.search(r'amalgamation-(\d+)\.zip', '${{ inputs.url }}').group(1)
+          version = f'{int(v[0])}.{int(v[1:3])}.{int(v[3:5])}'
+          with open(os.getenv('GITHUB_ENV'), 'a') as file:
+            file.write(f'version={version}\n')
+            file.write(f'branch=update-sqlite-{version}\n')
+        shell: python
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - run: "! git checkout ${{ env.branch }} -- # branch already exists?"
       - run: |
-          perl -pi.bak -e "s|^SQLITE_FOLDER\s*=.*|SQLITE_FOLDER = sqlite-amalgamation-${{ inputs.version }}|" Makefile
-          perl -pi.bak -e "s|^SQLITE_URL\s*=.*|SQLITE_URL = https://www.sqlite.org/${{ inputs.url }}|" Makefile
-          perl -pi.bak -e "s|^SQLITE_HASH\s*=.*|SQLITE_HASH = ${{ inputs.hash }}|" Makefile
-          rm Makefile.bak
-      - run: |
-          npm run clean
-          npm run build
+          perl -pi -e "s|^(\s*SQLITE_URL\s*=\s*).*|\${1}https://www.sqlite.org/${{ inputs.url }}|" Makefile
+          perl -pi -e "s|^(\s*SQLITE_HASH\s*=\s*).*|\${1}${{ inputs.hash }}|" Makefile
       - uses: ./.github/actions/create-pr
         with:
-          branch: update-sqlite-${{ inputs.version }}
-          message: "Update to SQLite ${{ inputs.version }}"
+          branch: ${{ env.branch }}
+          message: "Update to SQLite ${{ env.version }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -30,13 +30,12 @@ jobs:
           if current_ver != new_ver:
             with open(os.getenv('GITHUB_OUTPUT'), 'a') as file:
               file.write(f'create-pr=yes\n')
-              file.write(f'version={new_ver}\n')
-              file.write(f'hash={hash}\n')
               file.write(f'url={url}\n')
+              file.write(f'hash={hash}\n')
         shell: python
       - if: steps.check.outputs.create-pr == 'yes'
         run: >
-          gh workflow run create-pr-new-sqlite.yml -f version=${{ steps.check.outputs.version }}
-          -f hash=${{ steps.check.outputs.hash }} -f url=${{ steps.check.outputs.url }}
+          gh workflow run create-pr-new-sqlite.yml -f url=${{ steps.check.outputs.url }}
+          -f hash=${{ steps.check.outputs.hash }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
