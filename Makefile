@@ -1,6 +1,5 @@
 SHELL := /bin/bash
 
-SQLITE_FOLDER = sqlite-amalgamation-3410000
 SQLITE_URL = https://www.sqlite.org/2023/sqlite-amalgamation-3410000.zip
 SQLITE_HASH = 052c721508b208403ab5ba939ee3cead56a8bd03225ffc778948e3c59c83b7ee
 SQLITE_SRC_FILES = sqlite-src/sqlite3.c sqlite-src/sqlite3.h
@@ -74,14 +73,14 @@ $(EXPORTED_FUNCS_JSON): src/api.js
 download: $(SQLITE_SRC_FILES)
 
 $(SQLITE_SRC_FILES):
-	mkdir -p sqlite-src
+	mkdir -p sqlite-src/tmp
 	curl -LsSf '$(SQLITE_URL)' -o sqlite-src/sqlite.zip
 	# verify checksum
-	openssl dgst -sha3-256 sqlite-src/sqlite.zip | sed -r 's/SHA3-256\(.+\)= //' > sqlite-src/hash.txt
-	echo $(SQLITE_HASH) | diff -q sqlite-src/hash.txt -
-	rm sqlite-src/hash.txt
+	diff -q <(echo $(SQLITE_HASH)) \
+		<(echo $$(openssl dgst -sha3-256 sqlite-src/sqlite.zip | awk '{print $$NF}'))
 	# unpack required files
-	unzip -u sqlite-src/sqlite.zip -d sqlite-src/
-	mv sqlite-src/$(SQLITE_FOLDER)/sqlite3.{h,c} sqlite-src/
-	rm -rf sqlite-src/sqlite.zip sqlite-src/$(SQLITE_FOLDER)
+	unzip -u sqlite-src/sqlite.zip -d sqlite-src/tmp/
+	mv $$(find sqlite-src/tmp/ -name sqlite3.h) sqlite-src/
+	mv $$(find sqlite-src/tmp/ -name sqlite3.c) sqlite-src/
+	rm -rf sqlite-src/sqlite.zip sqlite-src/tmp
 	touch sqlite-src/sqlite3.{h,c}
