@@ -1,0 +1,29 @@
+name: "Check emscripten version"
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 16 * * 3"
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - id: check
+        run: |
+          import re
+          import os
+          from urllib.request import urlopen
+          import json
+          with open('package.json') as file:
+            current_ver = re.search(r'emscripten/emsdk:(\d+\.\d+\.\d+)', file.read()).group(1)
+          with urlopen('https://hub.docker.com/v2/repositories/emscripten/emsdk/tags/?page_size=1') as req:
+            new_ver = json.loads(req.read())['results'][0]['name']
+          if current_ver != new_ver:
+            with open(os.getenv('GITHUB_OUTPUT'), 'a') as file:
+              file.write('create-pr=yes\n')
+              file.write(f'version={new_ver}\n')
+        shell: python
+      - if: steps.check.outputs.create-pr == 'yes'
+        run: gh workflow run create-pr-new-emscripten.yml -f version=${{ steps.check.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
