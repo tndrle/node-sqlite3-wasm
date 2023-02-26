@@ -8,28 +8,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: curl -LsS https://www.sqlite.org/download.html > sqlite.html
       - id: check
         run: |
           import re
           import os
+          from urllib.request import urlopen
           with open('Makefile') as file:
             current_ver = re.search(r'amalgamation-(\d+)\.zip', file.read()).group(1)
-          with open('sqlite.html') as file:
-            data = file.read()
-            link_id, new_ver, hash = re.search(
-              r'''<tr>.*?<a\s+id=['"](.+?)['"]\s+href=.+?>sqlite-amalgamation-(\d+)\.zip.*?''' +
-                r'\(sha3-256: ([a-f\d]+)\)',
-              data,
-              re.S | re.I
+          with urlopen('https://www.sqlite.org/download.html') as req:
+            url, hash = re.search(
+              r'^PRODUCT,[\d.]+,(.+?-amalgamation-.+?),\d+,([a-f\d]+),?',
+              req.read().decode('utf-8'),
+              re.M | re.I
             ).groups()
-            url = re.search(
-              fr'''\(\s*['"]{link_id}['"]\s*,\s*['"](\d+/sqlite-amalgamation-{new_ver}.zip)['"]\s*\)''',
-              data
-            ).group(1)
+          new_ver = re.search(r'amalgamation-(\d+)\.zip', url).group(1)
           if current_ver != new_ver:
             with open(os.getenv('GITHUB_OUTPUT'), 'a') as file:
-              file.write(f'create-pr=yes\n')
+              file.write('create-pr=yes\n')
               file.write(f'url={url}\n')
               file.write(f'hash={hash}\n')
         shell: python
