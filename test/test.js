@@ -4,6 +4,21 @@ const { Database, SQLite3Error } = require("../dist/node-sqlite3-wasm.js");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 
+describe("version", function () {
+  it("check version", function () {
+    const content = fs.readFileSync("Makefile", "utf8");
+    const v = content.match(/amalgamation-(\d+)\.zip/)[1];
+    const major = v[0];
+    const minor = parseInt(v.substring(1, 3));
+    const patch = parseInt(v.substring(3, 5));
+    const des_version = `${major}.${minor}.${patch}`
+
+    const db = new Database();
+    const act_version = db.get("SELECT sqlite_version() AS v").v;
+    assert.strictEqual(des_version, act_version);
+  });
+});
+
 describe("open database", function () {
   before(async function () {
     try {
