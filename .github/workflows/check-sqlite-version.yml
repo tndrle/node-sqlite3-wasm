@@ -9,8 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: |
-          import re
-          import os
+          import re, os
           from urllib.request import urlopen
           with open('Makefile') as file:
             current_ver = re.search(r'amalgamation-(\d+)\.zip', file.read()).group(1)

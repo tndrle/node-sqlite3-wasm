@@ -9,10 +9,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: |
-          import re
-          import os
+          import re, os, json
           from urllib.request import urlopen
-          import json
           with open('package.json') as file:
             current_ver = re.search(r'emscripten/emsdk:(\d+\.\d+\.\d+)', file.read()).group(1)
           with urlopen('https://hub.docker.com/v2/repositories/emscripten/emsdk/tags/?page_size=1') as req:
