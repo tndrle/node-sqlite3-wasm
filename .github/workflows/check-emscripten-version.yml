@@ -8,8 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - id: check
-        run: |
+      - run: |
           import re
           import os
           from urllib.request import urlopen
@@ -19,11 +18,7 @@ jobs:
           with urlopen('https://hub.docker.com/v2/repositories/emscripten/emsdk/tags/?page_size=1') as req:
             new_ver = json.loads(req.read())['results'][0]['name']
           if current_ver != new_ver:
-            with open(os.getenv('GITHUB_OUTPUT'), 'a') as file:
-              file.write('create-pr=yes\n')
-              file.write(f'version={new_ver}\n')
+            os.system(f'gh workflow run create-pr-new-emscripten.yml -f version="{new_ver}"')
         shell: python
-      - if: steps.check.outputs.create-pr == 'yes'
-        run: gh workflow run create-pr-new-emscripten.yml -f version=${{ steps.check.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

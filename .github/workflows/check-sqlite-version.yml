@@ -8,29 +8,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - id: check
-        run: |
+      - run: |
           import re
           import os
           from urllib.request import urlopen
           with open('Makefile') as file:
             current_ver = re.search(r'amalgamation-(\d+)\.zip', file.read()).group(1)
           with urlopen('https://www.sqlite.org/download.html') as req:
-            url, hash = re.search(
-              r'^PRODUCT,[\d.]+,(.+?-amalgamation-.+?),\d+,([a-f\d]+),?',
+            url, new_ver, hash = re.search(
+              r'^PRODUCT,[\d.]+,(.+?-amalgamation-(\d+)\.zip),\d+,([a-f\d]+),?',
               req.read().decode('utf-8'),
-              re.M | re.I
+              re.M
             ).groups()
-          new_ver = re.search(r'amalgamation-(\d+)\.zip', url).group(1)
           if current_ver != new_ver:
-            with open(os.getenv('GITHUB_OUTPUT'), 'a') as file:
-              file.write('create-pr=yes\n')
-              file.write(f'url={url}\n')
-              file.write(f'hash={hash}\n')
+            os.system(f'gh workflow run create-pr-new-sqlite.yml -f url="{url}" -f hash="{hash}"')
         shell: python
-      - if: steps.check.outputs.create-pr == 'yes'
-        run: >
-          gh workflow run create-pr-new-sqlite.yml -f url=${{ steps.check.outputs.url }}
-          -f hash=${{ steps.check.outputs.hash }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
