@@ -15,7 +15,7 @@ describe("version", function () {
 
     const db = new Database();
     const act_version = db.get("SELECT sqlite_version() AS v").v;
-    assert.strictEqual(des_version, act_version);
+    assert.strictEqual(act_version, des_version);
   });
 });
 
