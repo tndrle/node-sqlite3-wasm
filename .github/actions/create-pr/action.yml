@@ -22,4 +22,5 @@ runs:
         git commit -m"${{ inputs.message }}"
         git push --set-upstream origin ${{ inputs.branch }}
         gh pr create --title "${{ inputs.message }}" --body "${{ inputs.message }}"
+        gh workflow run tests.yml -r ${{ inputs.branch }}
       shell: bash
