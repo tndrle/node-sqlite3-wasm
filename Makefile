@@ -34,8 +34,7 @@ EM_FLAGS = -O3 -flto
 
 LINK_FLAGS = \
 	-s EXPORTED_FUNCTIONS=@$(EXPORTED_FUNCS_JSON) \
-	-s EXPORTED_RUNTIME_METHODS=cwrap,stackAlloc,addFunction,removeFunction \
-	-s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=['$$addFunction','$$removeFunction'] \
+	-s EXPORTED_RUNTIME_METHODS=cwrap,addFunction,removeFunction \
 	-s NODEJS_CATCH_EXIT=0 \
 	-s NODEJS_CATCH_REJECTION=0 \
 	-s MODULARIZE=1 \
