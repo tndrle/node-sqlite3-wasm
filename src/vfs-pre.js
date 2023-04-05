@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/* c8 ignore stop */
+
 "use strict";
 
 const path = require("node:path");
@@ -53,3 +55,5 @@ function _safeInt(bigInt) {
     throw 0;
   return Number(bigInt);
 }
+
+/* c8 ignore start */

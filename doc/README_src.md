@@ -32,7 +32,6 @@ particular, it does not support
 
 - File locking
 - Loading of dynamic extensions
-- Binary large objects (BLOBs)
 
 ## Getting Started
 
@@ -428,11 +427,12 @@ Property determining whether the statement has been finalized using
 
 ### `class SQLite3Error`
 
-_node-sqlite3-wasm_ throws an `SQLite3Error` whenever an error in SQLite3 occurs
-or when functionality is not supported (e.g. BLOBs). `SQLite3Error` is a
-subclass of `Error`.
+_node-sqlite3-wasm_ throws an `SQLite3Error` whenever an error in SQLite
+or in the API occurs. `SQLite3Error` is a subclass of `Error`.
 
-## Notes About Numbers
+## Notes About Types
+
+### Numbers
 
 JavaScript's
 [`Number`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number?retiredLocale=de)
@@ -448,6 +448,12 @@ It is your responsibility to ensure that you handle the returned values, whether
 `Number` or `BigInt`, correctly. _node-sqlite3-wasm_ also allows you to input
 `BigInt` values as query parameters, or arguments or return values of
 user-defined functions.
+
+### Binary Large Objects (BLOBs)
+
+An SQLite Binary Large Object (BLOB) is represented by a
+[`Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
+in JavaScript.
 
 ## Building
 

@@ -23,6 +23,8 @@
 // Parts of this file are taken from sql.js (https://github.com/sql-js/sql.js/),
 // which is MIT licensed.
 
+/* c8 ignore stop */
+
 "use strict";
 
 const INT32_MIN = -2147483648;
@@ -57,25 +59,33 @@ let sqlite3_bind_int;
 let sqlite3_bind_int64;
 let sqlite3_bind_double;
 let sqlite3_bind_text;
+let sqlite3_bind_blob;
+let sqlite3_bind_blob64;
 let sqlite3_bind_null;
 let sqlite3_bind_parameter_index;
 let sqlite3_step;
 let sqlite3_column_int64;
 let sqlite3_column_double;
 let sqlite3_column_text;
+let sqlite3_column_blob;
 let sqlite3_column_type;
 let sqlite3_column_name;
 let sqlite3_column_count;
+let sqlite3_column_bytes;
 let sqlite3_last_insert_rowid;
 let sqlite3_changes;
 let sqlite3_create_function_v2;
 let sqlite3_value_type;
 let sqlite3_value_text;
+let sqlite3_value_blob;
 let sqlite3_value_int64;
 let sqlite3_value_double;
+let sqlite3_value_bytes;
 let sqlite3_result_double;
 let sqlite3_result_null;
 let sqlite3_result_text;
+let sqlite3_result_blob;
+let sqlite3_result_blob64;
 let sqlite3_result_int;
 let sqlite3_result_int64;
 let sqlite3_result_error;
@@ -134,6 +144,20 @@ Module.onRuntimeInitialized = () => {
     "number",
     "number",
   ]);
+  sqlite3_bind_blob = cwrap("sqlite3_bind_blob", "number", [
+    "number",
+    "number",
+    "array",
+    "number",
+    "number",
+  ]);
+  sqlite3_bind_blob64 = cwrap("sqlite3_bind_blob64", "number", [
+    "number",
+    "number",
+    "array",
+    "number",
+    "number",
+  ]);
   sqlite3_bind_null = cwrap("sqlite3_bind_null", "number", [
     "number",
     "number",
@@ -156,6 +180,10 @@ Module.onRuntimeInitialized = () => {
     "number",
     "number",
   ]);
+  sqlite3_column_blob = cwrap("sqlite3_column_blob", "number", [
+    "number",
+    "number",
+  ]);
   sqlite3_column_type = cwrap("sqlite3_column_type", "number", [
     "number",
     "number",
@@ -165,6 +193,10 @@ Module.onRuntimeInitialized = () => {
     "number",
   ]);
   sqlite3_column_count = cwrap("sqlite3_column_count", "number", ["number"]);
+  sqlite3_column_bytes = cwrap("sqlite3_column_bytes", "number", [
+    "number",
+    "number",
+  ]);
   sqlite3_last_insert_rowid = cwrap("sqlite3_last_insert_rowid", "number", [
     "number",
   ]);
@@ -182,8 +214,10 @@ Module.onRuntimeInitialized = () => {
   ]);
   sqlite3_value_type = cwrap("sqlite3_value_type", "number", ["number"]);
   sqlite3_value_text = cwrap("sqlite3_value_text", "string", ["number"]);
+  sqlite3_value_blob = cwrap("sqlite3_value_blob", "number", ["number"]);
   sqlite3_value_int64 = cwrap("sqlite3_value_int64", "number", ["number"]);
   sqlite3_value_double = cwrap("sqlite3_value_double", "number", ["number"]);
+  sqlite3_value_bytes = cwrap("sqlite3_value_bytes", "number", ["number"]);
   sqlite3_result_double = cwrap("sqlite3_result_double", "", [
     "number",
     "number",
@@ -192,6 +226,18 @@ Module.onRuntimeInitialized = () => {
   sqlite3_result_text = cwrap("sqlite3_result_text", "", [
     "number",
     "string",
+    "number",
+    "number",
+  ]);
+  sqlite3_result_blob = cwrap("sqlite3_result_blob", "", [
+    "number",
+    "array",
+    "number",
+    "number",
+  ]);
+  sqlite3_result_blob64 = cwrap("sqlite3_result_blob64", "", [
+    "number",
+    "array",
     "number",
     "number",
   ]);
@@ -245,7 +291,13 @@ function parseFunctionArguments(argc, argv) {
         arg = sqlite3_value_text(ptr);
         break;
       case SQLITE_BLOB:
-        throw new SQLite3Error("Type BLOB not supported");
+        const p = sqlite3_value_blob(ptr);
+        if (p != NULL) {
+          arg = HEAPU8.slice(p, p + sqlite3_value_bytes(ptr));
+        } else {
+          arg = new Uint8Array();
+        }
+        break;
       case SQLITE_NULL:
         arg = null;
         break;
@@ -280,6 +332,17 @@ function setFunctionResult(cx, result) {
     case "object":
       if (result === null) {
         sqlite3_result_null(cx);
+      } else if (result instanceof Uint8Array) {
+        if (result.byteLength <= INT32_MAX) {
+          sqlite3_result_blob(cx, result, result.byteLength, SQLITE_TRANSIENT);
+        } else {
+          sqlite3_result_blob64(
+            cx,
+            result,
+            BigInt(result.byteLength),
+            SQLITE_TRANSIENT
+          );
+        }
       } else {
         throw new SQLite3Error(
           `Unsupported type for function result: "${typeof result}"`
@@ -525,7 +588,13 @@ class Statement {
           v = sqlite3_column_text(this._ptr, i);
           break;
         case SQLITE_BLOB:
-          throw new SQLite3Error("Column type BLOB not supported");
+          const p = sqlite3_column_blob(this._ptr, i);
+          if (p != NULL) {
+            v = HEAPU8.slice(p, p + sqlite3_column_bytes(this._ptr, i));
+          } else {
+            v = new Uint8Array();
+          }
+          break;
         case SQLITE_NULL:
           v = null;
           break;
@@ -601,6 +670,24 @@ class Statement {
       case "object":
         if (value === null) {
           ret = sqlite3_bind_null(this._ptr, position);
+        } else if (value instanceof Uint8Array) {
+          if (value.byteLength <= INT32_MAX) {
+            ret = sqlite3_bind_blob(
+              this._ptr,
+              position,
+              value,
+              value.byteLength,
+              SQLITE_TRANSIENT
+            );
+          } else {
+            ret = sqlite3_bind_blob64(
+              this._ptr,
+              position,
+              value,
+              BigInt(value.byteLength),
+              SQLITE_TRANSIENT
+            );
+          }
         } else {
           throw new SQLite3Error(
             `Unsupported type for binding: "${typeof value}"`
@@ -623,3 +710,5 @@ class Statement {
 
 Module.Database = Database;
 Module.SQLite3Error = SQLite3Error;
+
+/* c8 ignore start */

@@ -23,6 +23,20 @@
 "use strict";
 
 mergeInto(LibraryManager.library, {
+  nodejsAccess: function (vfs, filePath, flags, outResult) {
+    /* c8 ignore stop */
+    let aflags = fs.constants.F_OK;
+    if (flags == SQLITE_ACCESS_READWRITE)
+      aflags = fs.constants.R_OK | fs.constants.W_OK;
+    if (flags == SQLITE_ACCESS_READ) aflags = fs.constants.R_OK;
+    try {
+      fs.accessSync(UTF8ToString(filePath), aflags);
+      setValue(outResult, 1, "i32");
+    } catch {
+      setValue(outResult, 0, "i32");
+    }
+    return SQLITE_OK;
+  },
   nodejsFullPathname: function (vfs, relPath, sizeFullPath, outFullPath) {
     const full = path.resolve(UTF8ToString(relPath));
     stringToUTF8(full, outFullPath, sizeFullPath);
@@ -104,19 +118,6 @@ mergeInto(LibraryManager.library, {
     }
     return SQLITE_OK;
   },
-  nodejsAccess: function (vfs, filePath, flags, outResult) {
-    let aflags = fs.constants.F_OK;
-    if (flags == SQLITE_ACCESS_READWRITE)
-      aflags = fs.constants.R_OK | fs.constants.W_OK;
-    if (flags == SQLITE_ACCESS_READ) aflags = fs.constants.R_OK;
-    try {
-      fs.accessSync(UTF8ToString(filePath), aflags);
-      setValue(outResult, 1, "i32");
-    } catch {
-      setValue(outResult, 0, "i32");
-    }
-    return SQLITE_OK;
-  },
   nodejsRandomness: function (vfs, bytes, outBuffer) {
     const buf = HEAPU8.subarray(outBuffer, outBuffer + bytes);
     crypto.randomFillSync(buf);
@@ -138,6 +139,9 @@ mergeInto(LibraryManager.library, {
     }
     return SQLITE_OK;
   },
+  nodejs_max_path_length: function () {
+    return process.platform == "win32" ? 260 : 4096;
+  },
   nodejs_open: function (filePath, flags, mode) {
     let oflags = 0;
     if (flags & SQLITE_OPEN_EXCLUSIVE) oflags |= fs.constants.O_EXCL;
@@ -150,8 +154,6 @@ mergeInto(LibraryManager.library, {
     } catch {
       return -1;
     }
-  },
-  nodejs_max_path_length: function () {
-    return process.platform == "win32" ? 260 : 4096;
+    /* c8 ignore start */
   },
 });

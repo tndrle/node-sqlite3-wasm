@@ -47,6 +47,11 @@ LINK_FLAGS = \
 
 all: dist/node-sqlite3-wasm.js
 
+.PHONY: coverage
+coverage: EM_FLAGS = -O1
+coverage: dist/node-sqlite3-wasm.js
+	head -1 $< | grep -q c8 || sed -i '1 i\/* c8 ignore start */' $<
+
 dist/node-sqlite3-wasm.js: $(OBJECT_FILES) $(EXPORTED_FUNCS_JSON) $(JS_PRE_FILES) $(JS_LIB_FILES)
 	mkdir -p dist
 	emcc $(LINK_FLAGS) $(EM_FLAGS) $(OBJECT_FILES) --js-library $(JS_LIB_FILES) \

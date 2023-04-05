@@ -23,14 +23,18 @@
     "dist/node-sqlite3-wasm.wasm"
   ],
   "scripts": {
+    "_docker": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:3.1.35",
     "test": "mocha --timeout 10000",
-    "build:dist": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:3.1.35 make",
-    "build:doc": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:3.1.35 python3 doc/create_readme.py",
+    "test:coverage": "c8 -r html mocha --timeout 10000",
+    "build:dist": "npm run _docker make",
+    "build:coverage": "npm run _docker make coverage",
+    "build:doc": "npm run _docker python3 doc/create_readme.py",
     "build": "npm run build:dist && npm run build:doc",
     "clean:build": "rm -rf build dist",
     "clean": "rm -rf build dist sqlite-src"
   },
   "devDependencies": {
-    "mocha": "^10.1.0"
+    "mocha": "^10.1.0",
+    "c8": "^7.13.0"
   }
 }
