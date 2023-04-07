@@ -450,7 +450,7 @@ class Statement {
   }
 
   finalize() {
-    this._assertReady();
+    if (this.isFinalized) throw new SQLite3Error("Statement already finalized");
 
     this._reset();
     this._db._handleError(sqlite3_finalize(this._ptr));
