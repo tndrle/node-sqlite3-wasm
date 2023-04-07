@@ -208,7 +208,7 @@ Arguments
     [deterministic](https://www.sqlite.org/deterministic.html)
 
 ```js
-db.function("regexp", (y, x) => (new RegExp(y, "i").test(x) ? 1 : 0), {
+db.function("regexp", (y, x) => new RegExp(y, "i").test(x), {
   deterministic: true,
 });
 db.all("SELECT * FROM book WHERE title REGEXP ?", ".*little.*");
