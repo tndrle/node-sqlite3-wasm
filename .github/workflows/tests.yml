@@ -1,8 +1,5 @@
 name: Tests
 on:
-  workflow_dispatch:
-  pull_request:
-    types: [assigned]
   push:
     branches:
       - "*"
