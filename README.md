@@ -216,7 +216,7 @@ db.all("SELECT * FROM book WHERE title REGEXP ?", ".*little.*");
 ### `Database.get(sql, [values, options]) -> row`
 
 Creates a prepared statement, executes it with the given values and returns the
-first resulting row as an objects. The prepared statement is finalized
+first resulting row as an object. The prepared statement is finalized
 automatically.
 
 Arguments
@@ -387,7 +387,7 @@ been finalized, it cannot be used anymore.
 ### `Statement.get([values, options]) -> row`
 
 Executes the prepared statement with the given values and returns the first
-resulting row as an objects.
+resulting row as an object.
 
 Arguments
 
