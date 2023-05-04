@@ -5,70 +5,70 @@
 
 import events = require("events");
 
-export const OPEN_READONLY: number;
-export const OPEN_READWRITE: number;
-export const OPEN_CREATE: number;
-export const OPEN_FULLMUTEX: number;
-export const OPEN_SHAREDCACHE: number;
-export const OPEN_PRIVATECACHE: number;
-export const OPEN_URI: number;
+declare const OPEN_READONLY: number;
+declare const OPEN_READWRITE: number;
+declare const OPEN_CREATE: number;
+declare const OPEN_FULLMUTEX: number;
+declare const OPEN_SHAREDCACHE: number;
+declare const OPEN_PRIVATECACHE: number;
+declare const OPEN_URI: number;
 
-export const VERSION: string;
-export const SOURCE_ID: string;
-export const VERSION_NUMBER: number;
+declare const VERSION: string;
+declare const SOURCE_ID: string;
+declare const VERSION_NUMBER: number;
 
-export const OK: number;
-export const ERROR: number;
-export const INTERNAL: number;
-export const PERM: number;
-export const ABORT: number;
-export const BUSY: number;
-export const LOCKED: number;
-export const NOMEM: number;
-export const READONLY: number;
-export const INTERRUPT: number
-export const IOERR: number;
-export const CORRUPT: number
-export const NOTFOUND: number;
-export const FULL: number;
-export const CANTOPEN: number;
-export const PROTOCOL: number;
-export const EMPTY: number;
-export const SCHEMA: number;
-export const TOOBIG: number
-export const CONSTRAINT: number
-export const MISMATCH: number;
-export const MISUSE: number;
-export const NOLFS: number;
-export const AUTH: number
-export const FORMAT: number;
-export const RANGE: number
-export const NOTADB: number;
+declare const OK: number;
+declare const ERROR: number;
+declare const INTERNAL: number;
+declare const PERM: number;
+declare const ABORT: number;
+declare const BUSY: number;
+declare const LOCKED: number;
+declare const NOMEM: number;
+declare const READONLY: number;
+declare const INTERRUPT: number
+declare const IOERR: number;
+declare const CORRUPT: number
+declare const NOTFOUND: number;
+declare const FULL: number;
+declare const CANTOPEN: number;
+declare const PROTOCOL: number;
+declare const EMPTY: number;
+declare const SCHEMA: number;
+declare const TOOBIG: number
+declare const CONSTRAINT: number
+declare const MISMATCH: number;
+declare const MISUSE: number;
+declare const NOLFS: number;
+declare const AUTH: number
+declare const FORMAT: number;
+declare const RANGE: number
+declare const NOTADB: number;
 
-export const LIMIT_LENGTH: number;
-export const LIMIT_SQL_LENGTH: number;
-export const LIMIT_COLUMN: number;
-export const LIMIT_EXPR_DEPTH: number;
-export const LIMIT_COMPOUND_SELECT: number;
-export const LIMIT_VDBE_OP: number;
-export const LIMIT_FUNCTION_ARG: number;
-export const LIMIT_ATTACHED: number;
-export const LIMIT_LIKE_PATTERN_LENGTH: number;
-export const LIMIT_VARIABLE_NUMBER: number;
-export const LIMIT_TRIGGER_DEPTH: number;
-export const LIMIT_WORKER_THREADS: number;
+declare const LIMIT_LENGTH: number;
+declare const LIMIT_SQL_LENGTH: number;
+declare const LIMIT_COLUMN: number;
+declare const LIMIT_EXPR_DEPTH: number;
+declare const LIMIT_COMPOUND_SELECT: number;
+declare const LIMIT_VDBE_OP: number;
+declare const LIMIT_FUNCTION_ARG: number;
+declare const LIMIT_ATTACHED: number;
+declare const LIMIT_LIKE_PATTERN_LENGTH: number;
+declare const LIMIT_VARIABLE_NUMBER: number;
+declare const LIMIT_TRIGGER_DEPTH: number;
+declare const LIMIT_WORKER_THREADS: number;
 
-export const cached: {
+declare const cached: {
     Database(filename: string, callback?: (this: Database, err: Error | null) => void): Database;
     Database(filename: string, mode?: number, callback?: (this: Database, err: Error | null) => void): Database;
 };
 
-export interface RunResult extends Statement {
+declare interface RunResult extends Statement {
     lastID: number;
     changes: number;
 }
 
-export class Statement extends events.EventEmitter {
+declare class Statement extends events.EventEmitter {
     bind(callback?: (err: Error | null) => void): this;
     bind(...params: any[]): this;
 
@@ -93,7 +93,7 @@ export class Statement extends events.EventEmitter {
     each(...params: any[]): this;
 }
 
-export class Database extends events.EventEmitter {
+declare class Database extends events.EventEmitter {
     constructor(filename: string, callback?: (err: Error | null) => void);
     constructor(filename: string, mode?: number, callback?: (err: Error | null) => void);
 
@@ -141,9 +141,9 @@ export class Database extends events.EventEmitter {
     interrupt(): void;
 }
 
-export function verbose(): sqlite3;
+declare function verbose(): sqlite3;
 
-export interface sqlite3 {
+declare interface sqlite3 {
     OPEN_READONLY: number;
     OPEN_READWRITE: number;
     OPEN_CREATE: number;
