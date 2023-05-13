@@ -18,9 +18,11 @@
     "electron"
   ],
   "main": "dist/node-sqlite3-wasm.js",
+  "types": "node-sqlite3-wasm.d.ts",
   "files": [
     "dist/node-sqlite3-wasm.js",
-    "dist/node-sqlite3-wasm.wasm"
+    "dist/node-sqlite3-wasm.wasm",
+    "node-sqlite3-wasm.d.ts"
   ],
   "scripts": {
     "_docker": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:3.1.39",
