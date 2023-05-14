@@ -32,6 +32,8 @@ typedef struct NodeJsFile NodeJsFile;
 struct NodeJsFile {
   sqlite3_file base;  // Base class. Must be first.
   int fd;             // File descriptor
+  int isLocked;
+  const char *path;
 };
 
 extern int nodejsWrite(sqlite3_file *, const void *, int, sqlite_int64);
@@ -44,22 +46,12 @@ extern int nodejsAccess(sqlite3_vfs *, const char *, int, int *);
 extern int nodejsRandomness(sqlite3_vfs *, int, char *);
 extern int nodejsTruncate(sqlite3_file *, sqlite_int64);
 extern int nodejsFileSize(sqlite3_file *, sqlite_int64 *);
+extern int nodejsLock(sqlite3_file *, int);
+extern int nodejsUnlock(sqlite3_file *, int);
+extern int nodejsCheckReservedLock(sqlite3_file *, int *);
 
 extern int nodejs_open(const char *, int, int);
 extern int nodejs_max_path_length();
-
-/*
-** Locking functions. The xLock() and xUnlock() methods are both no-ops.
-** The xCheckReservedLock() always indicates that no other process holds
-** a reserved lock on the database file. This ensures that if a hot-journal
-** file is found in the file-system it is rolled back.
-*/
-static int nodejsLock(sqlite3_file *pFile, int eLock) { return SQLITE_OK; }
-static int nodejsUnlock(sqlite3_file *pFile, int eLock) { return SQLITE_OK; }
-static int nodejsCheckReservedLock(sqlite3_file *pFile, int *pResOut) {
-  *pResOut = 0;
-  return SQLITE_OK;
-}
 
 /*
 ** No xFileControl() verbs are implemented by this VFS.
@@ -109,6 +101,7 @@ static int nodejsOpen(
   if (p->fd < 0) return SQLITE_CANTOPEN;
   if (pOutFlags) *pOutFlags = flags;
   p->base.pMethods = &nodejsio;
+  p->path = zName;
   return SQLITE_OK;
 }
 
