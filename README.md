@@ -27,11 +27,6 @@ that translates SQLite file access to [Node.js' file system
 API](https://nodejs.org/api/fs.html).
 
 _node-sqlite3-wasm_ is currently based on SQLite 3.42.0.
-It is a minimal implementation. In
-particular, it does not support
-
-- File locking
-- Loading of dynamic extensions
 
 ## Getting Started
 

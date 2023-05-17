@@ -608,5 +608,26 @@ describe("Low-level errors", function () {
       name: "SQLite3Error",
       message: "column index out of range",
     });
+    stmt.finalize();
+  });
+});
+
+describe("VFS", function () {
+  before(function () {
+    this.db = open();
+    this.db.exec("CREATE TABLE a (x INTEGER)");
+  });
+
+  after(function () {
+    this.db.close();
+  });
+
+  it("lock already exists", function () {
+    fs.mkdirSync("test.db.lock");
+    assert.throws(() => this.db.run("INSERT INTO a VALUES (?)", 1), {
+      name: "SQLite3Error",
+      message: "database is locked",
+    });
+    fs.rmSync("test.db.lock", { recursive: true, force: true });
   });
 });

@@ -65,6 +65,7 @@ mergeInto(LibraryManager.library, {
     return SQLITE_OK;
   },
   nodejsClose: function (fi) {
+    _nodejsUnlock(fi, SQLITE_LOCK_NONE);
     try {
       fs.closeSync(_fd(fi));
     } catch {
@@ -136,6 +137,39 @@ mergeInto(LibraryManager.library, {
       setValue(outSize, fs.fstatSync(_fd(fi)).size, "i64");
     } catch {
       return SQLITE_IOERR_FSTAT;
+    }
+    return SQLITE_OK;
+  },
+  nodejsLock: function (fi, level) {
+    // level is never SQLITE_LOCK_NONE
+    if (!_isLocked(fi)) {
+      try {
+        fs.mkdirSync(`${_path(fi)}.lock`);
+      } catch (err) {
+        return err.code == "EEXIST" ? SQLITE_BUSY : SQLITE_IOERR_LOCK;
+      }
+      _setLocked(fi, true);
+    }
+    return SQLITE_OK;
+  },
+  nodejsUnlock: function (fi, level) {
+    // level is either SQLITE_LOCK_NONE or SQLITE_LOCK_SHARED
+    if (level == SQLITE_LOCK_NONE && _isLocked(fi)) {
+      try {
+        fs.rmdirSync(`${_path(fi)}.lock`);
+      } catch (err) {
+        if (err.code != "ENOENT") return SQLITE_IOERR_UNLOCK;
+      }
+      _setLocked(fi, false);
+    }
+    return SQLITE_OK;
+  },
+  nodejsCheckReservedLock: function (fi, outResult) {
+    try {
+      fs.accessSync(`${_path(fi)}.lock`, fs.constants.F_OK);
+      setValue(outResult, 1, "i32");
+    } catch {
+      setValue(outResult, 0, "i32");
     }
     return SQLITE_OK;
   },

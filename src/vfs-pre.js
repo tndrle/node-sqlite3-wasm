@@ -36,6 +36,8 @@ const SQLITE_IOERR_DELETE = 2570;
 const SQLITE_IOERR_CLOSE = 4106;
 const SQLITE_IOERR_TRUNCATE = 1546;
 const SQLITE_IOERR_FSTAT = 1802;
+const SQLITE_IOERR_LOCK = 3850;
+const SQLITE_IOERR_UNLOCK = 2058;
 
 const SQLITE_OPEN_READONLY = 1;
 const SQLITE_OPEN_READWRITE = 2;
@@ -45,9 +47,24 @@ const SQLITE_OPEN_EXCLUSIVE = 16;
 const SQLITE_ACCESS_READWRITE = 1;
 const SQLITE_ACCESS_READ = 2;
 
+const SQLITE_LOCK_NONE = 0;
+const SQLITE_BUSY = 5;
+
 function _fd(fileInfo) {
   // fileInfo: pointer to struct NodeJsFile in file vfs.c
   return getValue(fileInfo + 4, "i32"); // read NodeJsFile.fd
+}
+
+function _isLocked(fileInfo) {
+  return getValue(fileInfo + 8, "i32") != 0; // read NodeJsFile.isLocked
+}
+
+function _setLocked(fileInfo, locked) {
+  setValue(fileInfo + 8, locked ? 1 : 0, "i32"); // write NodeJsFile.isLocked
+}
+
+function _path(fileInfo) {
+  return UTF8ToString(getValue(fileInfo + 12, "i32")); // read NodeJsFile.path
 }
 
 function _safeInt(bigInt) {
