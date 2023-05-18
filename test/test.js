@@ -1,6 +1,6 @@
 "use strict";
 
-const { Database, SQLite3Error } = require("../dist/node-sqlite3-wasm.js");
+const { Database } = require("../dist/node-sqlite3-wasm.js");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 
