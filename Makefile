@@ -70,7 +70,7 @@ $(EXPORTED_FUNCS_JSON): src/api.js
 	echo '[' > $@
 	grep -E '^let sqlite3_[A-z0-9_]+;$$' $< | sed -r 's/let (sqlite3_[A-z0-9_]+);/"_\1"/' | \
 		paste -sd "," - >> $@
-	echo ']' >> $@
+	echo ',"_malloc","_free"]' >> $@
 
 .PHONY: download
 download: $(SQLITE_SRC_FILES)

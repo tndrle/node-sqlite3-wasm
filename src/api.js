@@ -103,7 +103,7 @@ Module.onRuntimeInitialized = () => {
   ]);
   sqlite3_exec = cwrap("sqlite3_exec", "number", [
     "number",
-    "string",
+    "number",
     "number",
     "number",
     "number",
@@ -111,7 +111,7 @@ Module.onRuntimeInitialized = () => {
   sqlite3_errmsg = cwrap("sqlite3_errmsg", "string", ["number"]);
   sqlite3_prepare_v2 = cwrap("sqlite3_prepare_v2", "number", [
     "number",
-    "string",
+    "number",
     "number",
     "number",
     "number",
@@ -140,21 +140,21 @@ Module.onRuntimeInitialized = () => {
   sqlite3_bind_text = cwrap("sqlite3_bind_text", "number", [
     "number",
     "number",
-    "string",
+    "number",
     "number",
     "number",
   ]);
   sqlite3_bind_blob = cwrap("sqlite3_bind_blob", "number", [
     "number",
     "number",
-    "array",
+    "number",
     "number",
     "number",
   ]);
   sqlite3_bind_blob64 = cwrap("sqlite3_bind_blob64", "number", [
     "number",
     "number",
-    "array",
+    "number",
     "number",
     "number",
   ]);
@@ -225,19 +225,19 @@ Module.onRuntimeInitialized = () => {
   sqlite3_result_null = cwrap("sqlite3_result_null", "", ["number"]);
   sqlite3_result_text = cwrap("sqlite3_result_text", "", [
     "number",
-    "string",
+    "number",
     "number",
     "number",
   ]);
   sqlite3_result_blob = cwrap("sqlite3_result_blob", "", [
     "number",
-    "array",
+    "number",
     "number",
     "number",
   ]);
   sqlite3_result_blob64 = cwrap("sqlite3_result_blob64", "", [
     "number",
-    "array",
+    "number",
     "number",
     "number",
   ]);
@@ -248,7 +248,7 @@ Module.onRuntimeInitialized = () => {
   ]);
   sqlite3_result_error = cwrap("sqlite3_result_error", "", [
     "number",
-    "string",
+    "number",
     "number",
   ]);
   sqlite3_column_table_name = cwrap("sqlite3_column_table_name", "string", [
@@ -265,6 +265,19 @@ class SQLite3Error extends Error {
     super(message);
     this.name = "SQLite3Error";
   }
+}
+
+function arrayToHeap(array) {
+  const ptr = _malloc(array.byteLength);
+  HEAPU8.set(array, ptr);
+  return ptr;
+}
+
+function stringToHeap(str) {
+  const size = lengthBytesUTF8(str) + 1;
+  const ptr = _malloc(size);
+  stringToUTF8(str, ptr, size);
+  return ptr;
 }
 
 function toNumberOrNot(bigInt) {
@@ -327,22 +340,26 @@ function setFunctionResult(cx, result) {
       sqlite3_result_int64(cx, result);
       break;
     case "string":
-      sqlite3_result_text(cx, result, -1, SQLITE_TRANSIENT);
+      const tempPtr = stringToHeap(result);
+      sqlite3_result_text(cx, tempPtr, -1, SQLITE_TRANSIENT);
+      _free(tempPtr);
       break;
     case "object":
       if (result === null) {
         sqlite3_result_null(cx);
       } else if (result instanceof Uint8Array) {
+        const tempPtr = arrayToHeap(result);
         if (result.byteLength <= INT32_MAX) {
-          sqlite3_result_blob(cx, result, result.byteLength, SQLITE_TRANSIENT);
+          sqlite3_result_blob(cx, tempPtr, result.byteLength, SQLITE_TRANSIENT);
         } else {
           sqlite3_result_blob64(
             cx,
-            result,
+            tempPtr,
             BigInt(result.byteLength),
             SQLITE_TRANSIENT
           );
         }
+        _free(tempPtr);
       } else {
         throw new SQLite3Error(
           `Unsupported type for function result: "${typeof result}"`
@@ -397,7 +414,9 @@ class Database {
       try {
         result = func.apply(null, args);
       } catch (err) {
-        sqlite3_result_error(cx, err.toString(), -1);
+        const tempPtr = stringToHeap(err.toString());
+        sqlite3_result_error(cx, tempPtr, -1);
+        _free(tempPtr);
         return;
       }
       setFunctionResult(cx, result);
@@ -428,7 +447,12 @@ class Database {
 
   exec(sql) {
     this._assertOpen();
-    this._handleError(sqlite3_exec(this._ptr, sql, NULL, NULL, NULL));
+    const tempPtr = stringToHeap(sql);
+    try {
+      this._handleError(sqlite3_exec(this._ptr, tempPtr, NULL, NULL, NULL));
+    } finally {
+      _free(tempPtr);
+    }
   }
 
   prepare(sql) {
@@ -478,7 +502,12 @@ class Database {
 
 class Statement {
   constructor(db, sql) {
-    db._handleError(sqlite3_prepare_v2(db._ptr, sql, -1, temp, NULL));
+    const tempPtr = stringToHeap(sql);
+    try {
+      db._handleError(sqlite3_prepare_v2(db._ptr, tempPtr, -1, temp, NULL));
+    } finally {
+      _free(tempPtr);
+    }
     this._ptr = getValue(temp, "i32");
     if (this._ptr === NULL) throw new SQLite3Error("Nothing to prepare");
 
@@ -642,13 +671,15 @@ class Statement {
     let ret;
     switch (typeof value) {
       case "string":
+        const tempPtr = stringToHeap(value);
         ret = sqlite3_bind_text(
           this._ptr,
           position,
-          value,
+          tempPtr,
           -1,
           SQLITE_TRANSIENT
         );
+        _free(tempPtr);
         break;
       case "number":
         if (Number.isSafeInteger(value)) {
@@ -671,11 +702,12 @@ class Statement {
         if (value === null) {
           ret = sqlite3_bind_null(this._ptr, position);
         } else if (value instanceof Uint8Array) {
+          const tempPtr = arrayToHeap(value);
           if (value.byteLength <= INT32_MAX) {
             ret = sqlite3_bind_blob(
               this._ptr,
               position,
-              value,
+              tempPtr,
               value.byteLength,
               SQLITE_TRANSIENT
             );
@@ -683,11 +715,12 @@ class Statement {
             ret = sqlite3_bind_blob64(
               this._ptr,
               position,
-              value,
+              tempPtr,
               BigInt(value.byteLength),
               SQLITE_TRANSIENT
             );
           }
+          _free(tempPtr);
         } else {
           throw new SQLite3Error(
             `Unsupported type for binding: "${typeof value}"`
