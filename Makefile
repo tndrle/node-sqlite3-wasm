@@ -68,7 +68,8 @@ build/vfs.o: src/vfs.c sqlite-src/sqlite3.h
 $(EXPORTED_FUNCS_JSON): src/api.js
 	mkdir -p build
 	echo '[' > $@
-	grep -E '^let sqlite3_[A-z0-9_]+;$$' $< | sed -r 's/let (sqlite3_[A-z0-9_]+);/"_\1"/' | \
+	perl -p0e 's/.*signatures = \{\n(.+?)\s*\}.*/\1/smg' src/api.js | \
+		perl -pe 's/\s*(.+):.*/"_sqlite3_\1"/' | \
 		paste -sd "," - >> $@
 	echo ',"_malloc","_free"]' >> $@
 

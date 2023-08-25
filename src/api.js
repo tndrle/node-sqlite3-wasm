@@ -46,218 +46,70 @@ const SQLITE_DETERMINISTIC = 2048;
 
 let temp;
 
-// Makefile will automatically export sqlite3_* functions
-let sqlite3_open_v2;
-let sqlite3_exec;
-let sqlite3_errmsg;
-let sqlite3_prepare_v2;
-let sqlite3_close_v2;
-let sqlite3_finalize;
-let sqlite3_reset;
-let sqlite3_clear_bindings;
-let sqlite3_bind_int;
-let sqlite3_bind_int64;
-let sqlite3_bind_double;
-let sqlite3_bind_text;
-let sqlite3_bind_blob;
-let sqlite3_bind_blob64;
-let sqlite3_bind_null;
-let sqlite3_bind_parameter_index;
-let sqlite3_step;
-let sqlite3_column_int64;
-let sqlite3_column_double;
-let sqlite3_column_text;
-let sqlite3_column_blob;
-let sqlite3_column_type;
-let sqlite3_column_name;
-let sqlite3_column_count;
-let sqlite3_column_bytes;
-let sqlite3_last_insert_rowid;
-let sqlite3_changes;
-let sqlite3_create_function_v2;
-let sqlite3_value_type;
-let sqlite3_value_text;
-let sqlite3_value_blob;
-let sqlite3_value_int64;
-let sqlite3_value_double;
-let sqlite3_value_bytes;
-let sqlite3_result_double;
-let sqlite3_result_null;
-let sqlite3_result_text;
-let sqlite3_result_blob;
-let sqlite3_result_blob64;
-let sqlite3_result_int;
-let sqlite3_result_int64;
-let sqlite3_result_error;
-let sqlite3_column_table_name;
-let sqlite3_get_autocommit;
+const sqlite3 = {};
 
 Module.onRuntimeInitialized = () => {
   temp = stackAlloc(4);
 
-  sqlite3_open_v2 = cwrap("sqlite3_open_v2", "number", [
-    "string",
-    "number",
-    "number",
-    "string",
-  ]);
-  sqlite3_exec = cwrap("sqlite3_exec", "number", [
-    "number",
-    "number",
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_errmsg = cwrap("sqlite3_errmsg", "string", ["number"]);
-  sqlite3_prepare_v2 = cwrap("sqlite3_prepare_v2", "number", [
-    "number",
-    "number",
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_close_v2 = cwrap("sqlite3_close_v2", "number", ["number"]);
-  sqlite3_finalize = cwrap("sqlite3_finalize", "number", ["number"]);
-  sqlite3_reset = cwrap("sqlite3_reset", "number", ["number"]);
-  sqlite3_clear_bindings = cwrap("sqlite3_clear_bindings", "number", [
-    "number",
-  ]);
-  sqlite3_bind_int = cwrap("sqlite3_bind_int", "number", [
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_bind_int64 = cwrap("sqlite3_bind_int64", "number", [
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_bind_double = cwrap("sqlite3_bind_double", "number", [
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_bind_text = cwrap("sqlite3_bind_text", "number", [
-    "number",
-    "number",
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_bind_blob = cwrap("sqlite3_bind_blob", "number", [
-    "number",
-    "number",
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_bind_blob64 = cwrap("sqlite3_bind_blob64", "number", [
-    "number",
-    "number",
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_bind_null = cwrap("sqlite3_bind_null", "number", [
-    "number",
-    "number",
-  ]);
-  sqlite3_bind_parameter_index = cwrap(
-    "sqlite3_bind_parameter_index",
-    "number",
-    ["number", "string"]
-  );
-  sqlite3_step = cwrap("sqlite3_step", "number", ["number"]);
-  sqlite3_column_int64 = cwrap("sqlite3_column_int64", "number", [
-    "number",
-    "number",
-  ]);
-  sqlite3_column_double = cwrap("sqlite3_column_double", "number", [
-    "number",
-    "number",
-  ]);
-  sqlite3_column_text = cwrap("sqlite3_column_text", "string", [
-    "number",
-    "number",
-  ]);
-  sqlite3_column_blob = cwrap("sqlite3_column_blob", "number", [
-    "number",
-    "number",
-  ]);
-  sqlite3_column_type = cwrap("sqlite3_column_type", "number", [
-    "number",
-    "number",
-  ]);
-  sqlite3_column_name = cwrap("sqlite3_column_name", "string", [
-    "number",
-    "number",
-  ]);
-  sqlite3_column_count = cwrap("sqlite3_column_count", "number", ["number"]);
-  sqlite3_column_bytes = cwrap("sqlite3_column_bytes", "number", [
-    "number",
-    "number",
-  ]);
-  sqlite3_last_insert_rowid = cwrap("sqlite3_last_insert_rowid", "number", [
-    "number",
-  ]);
-  sqlite3_changes = cwrap("sqlite3_changes", "number", ["number"]);
-  sqlite3_create_function_v2 = cwrap("sqlite3_create_function_v2", "number", [
-    "number",
-    "string",
-    "number",
-    "number",
-    "number",
-    "number",
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_value_type = cwrap("sqlite3_value_type", "number", ["number"]);
-  sqlite3_value_text = cwrap("sqlite3_value_text", "string", ["number"]);
-  sqlite3_value_blob = cwrap("sqlite3_value_blob", "number", ["number"]);
-  sqlite3_value_int64 = cwrap("sqlite3_value_int64", "number", ["number"]);
-  sqlite3_value_double = cwrap("sqlite3_value_double", "number", ["number"]);
-  sqlite3_value_bytes = cwrap("sqlite3_value_bytes", "number", ["number"]);
-  sqlite3_result_double = cwrap("sqlite3_result_double", "", [
-    "number",
-    "number",
-  ]);
-  sqlite3_result_null = cwrap("sqlite3_result_null", "", ["number"]);
-  sqlite3_result_text = cwrap("sqlite3_result_text", "", [
-    "number",
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_result_blob = cwrap("sqlite3_result_blob", "", [
-    "number",
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_result_blob64 = cwrap("sqlite3_result_blob64", "", [
-    "number",
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_result_int = cwrap("sqlite3_result_int", "", ["number", "number"]);
-  sqlite3_result_int64 = cwrap("sqlite3_result_int64", "", [
-    "number",
-    "number",
-  ]);
-  sqlite3_result_error = cwrap("sqlite3_result_error", "", [
-    "number",
-    "number",
-    "number",
-  ]);
-  sqlite3_column_table_name = cwrap("sqlite3_column_table_name", "string", [
-    "number",
-    "number",
-  ]);
-  sqlite3_get_autocommit = cwrap("sqlite3_get_autocommit", "number", [
-    "number",
-  ]);
+  const v = null; // return type void
+  const n = "number";
+  const s = "string";
+  const n1 = [n];
+  const n2 = [n, ...n1];
+  const n3 = [n, ...n2];
+  const n4 = [n, ...n3];
+  const n5 = [n, ...n4];
+
+  // Makefile will automatically export sqlite3_* functions
+  const signatures = {
+    open_v2: [n, [s, n, n, s]],
+    exec: [n, n5],
+    errmsg: [s, n1],
+    prepare_v2: [n, n5],
+    close_v2: [n, n1],
+    finalize: [n, n1],
+    reset: [n, n1],
+    clear_bindings: [n, n1],
+    bind_int: [n, n3],
+    bind_int64: [n, n3],
+    bind_double: [n, n3],
+    bind_text: [n, n5],
+    bind_blob: [n, n5],
+    bind_blob64: [n, n5],
+    bind_null: [n, n2],
+    bind_parameter_index: [n, [n, s]],
+    step: [n, n1],
+    column_int64: [n, n2],
+    column_double: [n, n2],
+    column_text: [s, n2],
+    column_blob: [n, n2],
+    column_type: [n, n2],
+    column_name: [s, n2],
+    column_count: [n, n1],
+    column_bytes: [n, n2],
+    last_insert_rowid: [n, n1],
+    changes: [n, n1],
+    create_function_v2: [n, [n, s, n, n, n, n, n, n, n]],
+    value_type: [n, n1],
+    value_text: [s, n1],
+    value_blob: [n, n1],
+    value_int64: [n, n1],
+    value_double: [n, n1],
+    value_bytes: [n, n1],
+    result_double: [v, n2],
+    result_null: [v, n1],
+    result_text: [v, n4],
+    result_blob: [v, n4],
+    result_blob64: [v, n4],
+    result_int: [v, n2],
+    result_int64: [v, n2],
+    result_error: [v, n3],
+    column_table_name: [s, n2],
+    get_autocommit: [n, n1],
+  };
+  for (const [name, sig] of Object.entries(signatures)) {
+    sqlite3[name] = cwrap(`sqlite3_${name}`, sig[0], sig[1]);
+  }
 };
 
 class SQLite3Error extends Error {
@@ -291,22 +143,22 @@ function parseFunctionArguments(argc, argv) {
   const args = [];
   for (let i = 0; i < argc; i++) {
     const ptr = getValue(argv + 4 * i, "i32");
-    const type = sqlite3_value_type(ptr);
+    const type = sqlite3.value_type(ptr);
     let arg;
     switch (type) {
       case SQLITE_INTEGER:
-        arg = toNumberOrNot(sqlite3_value_int64(ptr));
+        arg = toNumberOrNot(sqlite3.value_int64(ptr));
         break;
       case SQLITE_FLOAT:
-        arg = sqlite3_value_double(ptr);
+        arg = sqlite3.value_double(ptr);
         break;
       case SQLITE_TEXT:
-        arg = sqlite3_value_text(ptr);
+        arg = sqlite3.value_text(ptr);
         break;
       case SQLITE_BLOB:
-        const p = sqlite3_value_blob(ptr);
+        const p = sqlite3.value_blob(ptr);
         if (p != NULL) {
-          arg = HEAPU8.slice(p, p + sqlite3_value_bytes(ptr));
+          arg = HEAPU8.slice(p, p + sqlite3.value_bytes(ptr));
         } else {
           arg = new Uint8Array();
         }
@@ -323,36 +175,36 @@ function parseFunctionArguments(argc, argv) {
 function setFunctionResult(cx, result) {
   switch (typeof result) {
     case "boolean":
-      sqlite3_result_int(cx, result ? 1 : 0);
+      sqlite3.result_int(cx, result ? 1 : 0);
       break;
     case "number":
       if (Number.isSafeInteger(result)) {
         if (result >= INT32_MIN && result <= INT32_MAX) {
-          sqlite3_result_int(cx, result);
+          sqlite3.result_int(cx, result);
         } else {
-          sqlite3_result_int64(cx, BigInt(result));
+          sqlite3.result_int64(cx, BigInt(result));
         }
       } else {
-        sqlite3_result_double(cx, result);
+        sqlite3.result_double(cx, result);
       }
       break;
     case "bigint":
-      sqlite3_result_int64(cx, result);
+      sqlite3.result_int64(cx, result);
       break;
     case "string":
       const tempPtr = stringToHeap(result);
-      sqlite3_result_text(cx, tempPtr, -1, SQLITE_TRANSIENT);
+      sqlite3.result_text(cx, tempPtr, -1, SQLITE_TRANSIENT);
       _free(tempPtr);
       break;
     case "object":
       if (result === null) {
-        sqlite3_result_null(cx);
+        sqlite3.result_null(cx);
       } else if (result instanceof Uint8Array) {
         const tempPtr = arrayToHeap(result);
         if (result.byteLength <= INT32_MAX) {
-          sqlite3_result_blob(cx, tempPtr, result.byteLength, SQLITE_TRANSIENT);
+          sqlite3.result_blob(cx, tempPtr, result.byteLength, SQLITE_TRANSIENT);
         } else {
-          sqlite3_result_blob64(
+          sqlite3.result_blob64(
             cx,
             tempPtr,
             BigInt(result.byteLength),
@@ -377,10 +229,10 @@ class Database {
   constructor(filename, { fileMustExist = false } = {}) {
     let flags = SQLITE_OPEN_READWRITE;
     if (!fileMustExist) flags |= SQLITE_OPEN_CREATE;
-    const rc = sqlite3_open_v2(filename, temp, flags, NULL);
+    const rc = sqlite3.open_v2(filename, temp, flags, NULL);
     this._ptr = getValue(temp, "i32");
     if (rc !== SQLITE_OK) {
-      if (this._ptr !== NULL) sqlite3_close_v2(this._ptr);
+      if (this._ptr !== NULL) sqlite3.close_v2(this._ptr);
       throw new SQLite3Error(`Could not open the database "${filename}"`);
     }
     this._functions = new Map();
@@ -392,7 +244,7 @@ class Database {
 
   get inTransaction() {
     this._assertOpen();
-    return sqlite3_get_autocommit(this._ptr) === 0;
+    return sqlite3.get_autocommit(this._ptr) === 0;
   }
 
   close() {
@@ -400,7 +252,7 @@ class Database {
 
     for (const func of this._functions.values()) removeFunction(func);
     this._functions.clear();
-    this._handleError(sqlite3_close_v2(this._ptr));
+    this._handleError(sqlite3.close_v2(this._ptr));
     this._ptr = null;
   }
 
@@ -415,7 +267,7 @@ class Database {
         result = func.apply(null, args);
       } catch (err) {
         const tempPtr = stringToHeap(err.toString());
-        sqlite3_result_error(cx, tempPtr, -1);
+        sqlite3.result_error(cx, tempPtr, -1);
         _free(tempPtr);
         return;
       }
@@ -430,7 +282,7 @@ class Database {
     let eTextRep = SQLITE_UTF8;
     if (deterministic) eTextRep |= SQLITE_DETERMINISTIC;
     this._handleError(
-      sqlite3_create_function_v2(
+      sqlite3.create_function_v2(
         this._ptr,
         name,
         func.length,
@@ -449,7 +301,7 @@ class Database {
     this._assertOpen();
     const tempPtr = stringToHeap(sql);
     try {
-      this._handleError(sqlite3_exec(this._ptr, tempPtr, NULL, NULL, NULL));
+      this._handleError(sqlite3.exec(this._ptr, tempPtr, NULL, NULL, NULL));
     } finally {
       _free(tempPtr);
     }
@@ -496,7 +348,7 @@ class Database {
 
   _handleError(returnCode) {
     if (returnCode !== SQLITE_OK)
-      throw new SQLite3Error(sqlite3_errmsg(this._ptr));
+      throw new SQLite3Error(sqlite3.errmsg(this._ptr));
   }
 }
 
@@ -504,7 +356,7 @@ class Statement {
   constructor(db, sql) {
     const tempPtr = stringToHeap(sql);
     try {
-      db._handleError(sqlite3_prepare_v2(db._ptr, tempPtr, -1, temp, NULL));
+      db._handleError(sqlite3.prepare_v2(db._ptr, tempPtr, -1, temp, NULL));
     } finally {
       _free(tempPtr);
     }
@@ -528,8 +380,8 @@ class Statement {
     this._bind(values);
     this._step();
     return {
-      changes: sqlite3_changes(this._db._ptr),
-      lastInsertRowid: toNumberOrNot(sqlite3_last_insert_rowid(this._db._ptr)),
+      changes: sqlite3.changes(this._db._ptr),
+      lastInsertRowid: toNumberOrNot(sqlite3.last_insert_rowid(this._db._ptr)),
     };
   }
 
@@ -545,14 +397,14 @@ class Statement {
     if (this.isFinalized) throw new SQLite3Error("Statement already finalized");
 
     this._reset();
-    this._db._handleError(sqlite3_finalize(this._ptr));
+    this._db._handleError(sqlite3.finalize(this._ptr));
     this._ptr = null;
   }
 
   _reset() {
     return (
-      sqlite3_clear_bindings(this._ptr) === SQLITE_OK &&
-      sqlite3_reset(this._ptr) === SQLITE_OK
+      sqlite3.clear_bindings(this._ptr) === SQLITE_OK &&
+      sqlite3.reset(this._ptr) === SQLITE_OK
     );
   }
 
@@ -589,7 +441,7 @@ class Statement {
   }
 
   _step() {
-    const ret = sqlite3_step(this._ptr);
+    const ret = sqlite3.step(this._ptr);
     switch (ret) {
       case SQLITE_ROW:
         return true;
@@ -605,21 +457,21 @@ class Statement {
     const row = {};
     for (let i = 0; i < columns.length; i++) {
       let v;
-      const colType = sqlite3_column_type(this._ptr, i);
+      const colType = sqlite3.column_type(this._ptr, i);
       switch (colType) {
         case SQLITE_INTEGER:
-          v = toNumberOrNot(sqlite3_column_int64(this._ptr, i));
+          v = toNumberOrNot(sqlite3.column_int64(this._ptr, i));
           break;
         case SQLITE_FLOAT:
-          v = sqlite3_column_double(this._ptr, i);
+          v = sqlite3.column_double(this._ptr, i);
           break;
         case SQLITE_TEXT:
-          v = sqlite3_column_text(this._ptr, i);
+          v = sqlite3.column_text(this._ptr, i);
           break;
         case SQLITE_BLOB:
-          const p = sqlite3_column_blob(this._ptr, i);
+          const p = sqlite3.column_blob(this._ptr, i);
           if (p != NULL) {
-            v = HEAPU8.slice(p, p + sqlite3_column_bytes(this._ptr, i));
+            v = HEAPU8.slice(p, p + sqlite3.column_bytes(this._ptr, i));
           } else {
             v = new Uint8Array();
           }
@@ -630,7 +482,7 @@ class Statement {
       }
       const column = columns[i];
       if (expand) {
-        let table = sqlite3_column_table_name(this._ptr, i);
+        let table = sqlite3.column_table_name(this._ptr, i);
         table = table === "" ? "$" : table;
         if (Object.hasOwn(row, table)) {
           row[table][column] = v;
@@ -646,9 +498,9 @@ class Statement {
 
   _getColumnNames() {
     const names = [];
-    const columns = sqlite3_column_count(this._ptr);
+    const columns = sqlite3.column_count(this._ptr);
     for (let i = 0; i < columns; i++)
-      names.push(sqlite3_column_name(this._ptr, i));
+      names.push(sqlite3.column_name(this._ptr, i));
     return names;
   }
 
@@ -660,7 +512,7 @@ class Statement {
     for (const entry of Object.entries(values)) {
       const param = entry[0];
       const value = entry[1];
-      const i = sqlite3_bind_parameter_index(this._ptr, param);
+      const i = sqlite3.bind_parameter_index(this._ptr, param);
       if (i === 0)
         throw new SQLite3Error(`Unknown binding parameter: "${param}"`);
       this._bindValue(value, i);
@@ -672,7 +524,7 @@ class Statement {
     switch (typeof value) {
       case "string":
         const tempPtr = stringToHeap(value);
-        ret = sqlite3_bind_text(
+        ret = sqlite3.bind_text(
           this._ptr,
           position,
           tempPtr,
@@ -684,27 +536,27 @@ class Statement {
       case "number":
         if (Number.isSafeInteger(value)) {
           if (value >= INT32_MIN && value <= INT32_MAX) {
-            ret = sqlite3_bind_int(this._ptr, position, value);
+            ret = sqlite3.bind_int(this._ptr, position, value);
           } else {
-            ret = sqlite3_bind_int64(this._ptr, position, BigInt(value));
+            ret = sqlite3.bind_int64(this._ptr, position, BigInt(value));
           }
         } else {
-          ret = sqlite3_bind_double(this._ptr, position, value);
+          ret = sqlite3.bind_double(this._ptr, position, value);
         }
         break;
       case "bigint":
-        ret = sqlite3_bind_int64(this._ptr, position, value);
+        ret = sqlite3.bind_int64(this._ptr, position, value);
         break;
       case "boolean":
-        ret = sqlite3_bind_int(this._ptr, position, value ? 1 : 0);
+        ret = sqlite3.bind_int(this._ptr, position, value ? 1 : 0);
         break;
       case "object":
         if (value === null) {
-          ret = sqlite3_bind_null(this._ptr, position);
+          ret = sqlite3.bind_null(this._ptr, position);
         } else if (value instanceof Uint8Array) {
           const tempPtr = arrayToHeap(value);
           if (value.byteLength <= INT32_MAX) {
-            ret = sqlite3_bind_blob(
+            ret = sqlite3.bind_blob(
               this._ptr,
               position,
               tempPtr,
@@ -712,7 +564,7 @@ class Statement {
               SQLITE_TRANSIENT
             );
           } else {
-            ret = sqlite3_bind_blob64(
+            ret = sqlite3.bind_blob64(
               this._ptr,
               position,
               tempPtr,
