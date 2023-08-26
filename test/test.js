@@ -613,20 +613,20 @@ describe("Large BLOBs and strings", function () {
     assert.deepEqual(this.db.get("SELECT x FROM a").x, data);
   });
 
-  it("String", function () {
+  it("string", function () {
     this.db.run("INSERT INTO b VALUES(?)", this.str);
     assert.strictEqual(this.db.get("SELECT x FROM b").x, this.str);
     assert.strictEqual(this.db.get("SELECT ? AS r", this.str).r, this.str);
   });
 
-  it("Function", function () {
+  it("function", function () {
     assert.strictEqual(
       this.db.get("SELECT identity(?) AS r", this.str).r,
       this.str
     );
   });
 
-  it("Exec", function () {
+  it("exec", function () {
     this.db.exec(`INSERT INTO c VALUES('${this.str}')`);
     assert.strictEqual(this.db.get("SELECT x FROM c").x, this.str);
   });
