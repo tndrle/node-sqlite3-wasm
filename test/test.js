@@ -598,6 +598,7 @@ describe("Large BLOBs and strings", function () {
     this.db = open();
     this.db.exec("CREATE TABLE a (x BLOB)");
     this.db.exec("CREATE TABLE b (x TEXT)");
+    this.db.exec("CREATE TABLE c (x TEXT)");
     this.db.function("identity", (x) => x);
     this.str = "a".repeat(100_000);
   });
@@ -607,22 +608,27 @@ describe("Large BLOBs and strings", function () {
   });
 
   it("BLOB", function () {
-    this.db.run("INSERT INTO a VALUES(?)", [
-      new TextEncoder().encode(this.str),
-    ]);
+    const data = new TextEncoder().encode(this.str);
+    this.db.run("INSERT INTO a VALUES(?)", [data]);
+    assert.deepEqual(this.db.get("SELECT x FROM a").x, data);
   });
 
   it("String", function () {
-    this.db.run("INSERT INTO b VALUES(?)", [this.str]);
-    this.db.get("SELECT ?", [this.str]);
+    this.db.run("INSERT INTO b VALUES(?)", this.str);
+    assert.strictEqual(this.db.get("SELECT x FROM b").x, this.str);
+    assert.strictEqual(this.db.get("SELECT ? AS r", this.str).r, this.str);
   });
 
   it("Function", function () {
-    this.db.get("SELECT identity(?)", [this.str]);
+    assert.strictEqual(
+      this.db.get("SELECT identity(?) AS r", this.str).r,
+      this.str
+    );
   });
 
   it("Exec", function () {
-    this.db.exec(`INSERT INTO b VALUES('${this.str}')`);
+    this.db.exec(`INSERT INTO c VALUES('${this.str}')`);
+    assert.strictEqual(this.db.get("SELECT x FROM c").x, this.str);
   });
 });
 
