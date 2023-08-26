@@ -593,6 +593,45 @@ describe("Transaction", function () {
   });
 });
 
+describe("Large BLOBs and strings", function () {
+  before(function () {
+    this.db = open();
+    this.db.exec("CREATE TABLE a (x BLOB)");
+    this.db.exec("CREATE TABLE b (x TEXT)");
+    this.db.exec("CREATE TABLE c (x TEXT)");
+    this.db.function("identity", (x) => x);
+    this.str = "a".repeat(100_000);
+  });
+
+  after(function () {
+    this.db.close();
+  });
+
+  it("BLOB", function () {
+    const data = new TextEncoder().encode(this.str);
+    this.db.run("INSERT INTO a VALUES(?)", [data]);
+    assert.deepEqual(this.db.get("SELECT x FROM a").x, data);
+  });
+
+  it("string", function () {
+    this.db.run("INSERT INTO b VALUES(?)", this.str);
+    assert.strictEqual(this.db.get("SELECT x FROM b").x, this.str);
+    assert.strictEqual(this.db.get("SELECT ? AS r", this.str).r, this.str);
+  });
+
+  it("function", function () {
+    assert.strictEqual(
+      this.db.get("SELECT identity(?) AS r", this.str).r,
+      this.str
+    );
+  });
+
+  it("exec", function () {
+    this.db.exec(`INSERT INTO c VALUES('${this.str}')`);
+    assert.strictEqual(this.db.get("SELECT x FROM c").x, this.str);
+  });
+});
+
 describe("Low-level errors", function () {
   before(function () {
     this.db = open();
