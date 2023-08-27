@@ -22,7 +22,7 @@
 
 "use strict";
 
-mergeInto(LibraryManager.library, {
+addToLibrary({
   nodejsAccess: function (vfs, filePath, flags, outResult) {
     /* c8 ignore stop */
     let aflags = fs.constants.F_OK;
