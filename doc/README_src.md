@@ -173,6 +173,8 @@ Closes the database.
 
 **Important:** You **have to manually close** the database, otherwise you risk
 **memory leaks**.
+**Important:** Closing the database with [](#db.close) does not automatically
+finalize pending prepared statements.
 
 ```js
 db.close();
@@ -378,6 +380,8 @@ been finalized, it cannot be used anymore.
 
 **Important:** You **have to manually finalize** a statement, otherwise you risk
 **memory leaks**.
+**Important:** Closing the database with [](#db.close) does not automatically
+finalize pending prepared statements.
 
 ### `Statement.get([values, options]) -> row`
 
