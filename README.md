@@ -173,6 +173,7 @@ Closes the database.
 
 **Important:** You **have to manually close** the database, otherwise you risk
 **memory leaks**.
+
 **Important:** Closing the database with [`Database.close()`](#databaseclose) does not automatically
 finalize pending prepared statements.
 
@@ -380,6 +381,7 @@ been finalized, it cannot be used anymore.
 
 **Important:** You **have to manually finalize** a statement, otherwise you risk
 **memory leaks**.
+
 **Important:** Closing the database with [`Database.close()`](#databaseclose) does not automatically
 finalize pending prepared statements.
 
