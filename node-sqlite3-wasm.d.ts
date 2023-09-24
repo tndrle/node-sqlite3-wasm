@@ -40,7 +40,7 @@ declare module "node-sqlite3-wasm" {
   type QueryResult = NormalQueryResult | ExpandedQueryResult;
 
   class Database {
-    constructor(filename?: string, options?: { fileMustExist?: boolean });
+    constructor(filename?: string, options?: { fileMustExist?: boolean, readOnly?: boolean });
 
     get isOpen(): boolean;
     get inTransaction(): boolean;
