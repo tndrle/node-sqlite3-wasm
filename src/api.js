@@ -226,9 +226,15 @@ function setFunctionResult(cx, result) {
 }
 
 class Database {
-  constructor(filename, { fileMustExist = false } = {}) {
-    let flags = SQLITE_OPEN_READWRITE;
-    if (!fileMustExist) flags |= SQLITE_OPEN_CREATE;
+  constructor(filename, { fileMustExist = false, readOnly = false } = {}) {
+    let flags;
+    if (readOnly) {
+      flags = SQLITE_OPEN_READONLY;
+    } else {
+      flags = SQLITE_OPEN_READWRITE;
+      if (!fileMustExist) flags |= SQLITE_OPEN_CREATE;
+    }
+
     const rc = sqlite3.open_v2(filename, temp, flags, NULL);
     this._ptr = getValue(temp, "i32");
     if (rc !== SQLITE_OK) {

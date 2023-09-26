@@ -65,6 +65,43 @@ describe("Open database", function () {
       message: 'Could not open the database "test.db"',
     });
   });
+
+  it("file database (read-only, missing file)", function () {
+    assert.throws(() => new Database("missing.db", { readOnly: true }), {
+      name: "SQLite3Error",
+      message: 'Could not open the database "missing.db"',
+    });
+  });
+
+  it("file database (read-only)", function () {
+    new Database("test.db").close();
+    new Database("test.db", { readOnly: true }).close();
+  });
+});
+
+describe("Read-only database", function () {
+  before(function () {
+    this.db = open();
+    this.db.exec("CREATE TABLE a (x INTEGER)");
+    this.db.run("INSERT INTO a VALUES (?)", 1);
+    this.db.close();
+    this.db = new Database("test.db", { readOnly: true });
+  });
+
+  after(function () {
+    this.db.close();
+  });
+
+  it("read from read-only database", function () {
+    assert.strictEqual(this.db.get("SELECT * FROM a").x, 1);
+  });
+
+  it("write to read-only database", function () {
+    assert.throws(() => this.db.exec("CREATE TABLE b (x INTEGER)"), {
+      name: "SQLite3Error",
+      message: "attempt to write a readonly database",
+    });
+  });
 });
 
 describe("Working with closed database", function () {

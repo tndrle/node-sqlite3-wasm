@@ -122,7 +122,8 @@ Arguments
 - `options` (optional)
   - `fileMustExist` (default: `false`): if the database file does not exist it
     will not be created. Instead an [`SQLite3Error`](#class sqlite3error) will
-    be thrown.
+    be thrown. This option is ignored if `readOnly` is `true`.
+  - `readOnly` (default: `false`): opens the database in read-only mode
 
 ```js
 const db = new Database("database.db");
