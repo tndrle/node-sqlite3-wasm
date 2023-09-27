@@ -391,12 +391,17 @@ class Statement {
     };
   }
 
+  iterate(values, { expand = false } = {}) {
+    return this._queryRows(values, expand);
+  }
+
   all(values, { expand = false } = {}) {
-    return this._queryRows(values, false, expand);
+    return Array.from(this.iterate(values, { expand }));
   }
 
   get(values, { expand = false } = {}) {
-    return this._queryRows(values, true, expand);
+    const result = this._queryRows(values, expand).next();
+    return result.done ? null : result.value;
   }
 
   finalize() {
@@ -414,21 +419,11 @@ class Statement {
     );
   }
 
-  _queryRows(values, single, expand) {
+  *_queryRows(values, expand) {
     this._assertReady();
 
     this._bind(values);
-    if (single) {
-      if (this._step()) {
-        return this._getRow(expand);
-      } else {
-        return null;
-      }
-    } else {
-      const rows = [];
-      while (this._step()) rows.push(this._getRow(expand));
-      return rows;
-    }
+    while (this._step()) yield this._getRow(expand);
   }
 
   _bind(values) {
