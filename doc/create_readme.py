@@ -14,7 +14,7 @@ content = content.replace('%%sqlite_version%%', sqlite_version)
 
 def extract_link(heading):
   display = re.sub('\).*', ')', re.sub('\(.+\)', '()', heading))
-  anchor = re.sub('[.()\[\],>]', '', heading).replace(' ', '-').lower()
+  anchor = re.sub('[.()\[\],<>]', '', heading).replace(' ', '-').lower()
   ref = re.sub('^database', 'db', display.lower())
   ref = re.sub('^statement', 'stmt', ref).replace('()', '')
   return Link(ref, anchor, display)

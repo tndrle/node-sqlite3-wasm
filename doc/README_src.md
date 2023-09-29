@@ -330,6 +330,7 @@ Methods
 - [](#stmt.all)
 - [](#stmt.finalize)
 - [](#stmt.get)
+- [](#stmt.iterate)
 - [](#stmt.run)
 
 Properties
@@ -401,6 +402,20 @@ Arguments
     expression or subquery, it will be returned under the key `$`.
 
 See also [](#db.get)
+
+### `Statement.iterate([values, options]) -> IterableIterator<row>`
+
+Executes the prepared statement with the given values and returns the resulting
+rows as an iterator of objects.
+
+Arguments
+
+- `values` (optional): values to bind to the statement's parameters. Either a
+  single value, an array, or an object in case of named parameters.
+- `options` (optional)
+  - `expand` (default: `false`): if `true`, each returned row is a nested object
+    with keys corresponding to tables in the query. If a result column is an
+    expression or subquery, it will be returned under the key `$`.
 
 ### `Statement.run([values]) -> info`
 
