@@ -74,6 +74,10 @@ declare module "node-sqlite3-wasm" {
     get isFinalized(): boolean;
 
     run(values?: BindValues): RunResult;
+    iterate(
+      values?: BindValues,
+      options?: QueryOptions
+    ): IterableIterator<QueryResult>;
     all(values?: BindValues, options?: QueryOptions): QueryResult[];
     get(values?: BindValues, options?: QueryOptions): QueryResult | null;
     finalize(): void;
