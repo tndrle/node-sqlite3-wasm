@@ -462,12 +462,25 @@ describe("Prepared statements", function () {
   });
 
   it("iterate", function () {
-    const stmt = this.db.prepare("SELECT * FROM (values (1),(2))");
+    const stmt = this.db.prepare("SELECT * FROM (values (1), (2))");
     assert.strictEqual(stmt.iterate().next().value.column1, 1);
+
     const i = stmt.iterate();
     assert.strictEqual(i.next().value.column1, 1);
     assert.strictEqual(i.next().value.column1, 2);
     assert.strictEqual(i.next().done, true);
+
+    let x = 1;
+    for (const e of stmt.iterate()) {
+      assert.strictEqual(e.column1, x);
+      x++;
+    }
+
+    assert.deepEqual(Array.from(stmt.iterate()), [
+      { column1: 1 },
+      { column1: 2 },
+    ]);
+
     stmt.finalize();
   });
 
