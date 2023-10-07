@@ -407,9 +407,11 @@ class Statement {
   finalize() {
     if (this.isFinalized) throw new SQLite3Error("Statement already finalized");
 
-    this._reset();
-    this._db._handleError(sqlite3.finalize(this._ptr));
-    this._ptr = null;
+    try {
+      this._db._handleError(sqlite3.finalize(this._ptr));
+    } finally {
+      this._ptr = null;
+    }
   }
 
   _reset() {
@@ -423,7 +425,8 @@ class Statement {
     this._assertReady();
 
     this._bind(values);
-    while (this._step()) yield this._getRow(expand);
+    const columns = this._getColumnNames();
+    while (this._step()) yield this._getRow(columns, expand);
   }
 
   _bind(values) {
@@ -453,8 +456,7 @@ class Statement {
     }
   }
 
-  _getRow(expand) {
-    const columns = this._getColumnNames();
+  _getRow(columns, expand) {
     const row = {};
     for (let i = 0; i < columns.length; i++) {
       let v;
@@ -510,9 +512,7 @@ class Statement {
   }
 
   _bindObject(values) {
-    for (const entry of Object.entries(values)) {
-      const param = entry[0];
-      const value = entry[1];
+    for (const [param, value] of Object.entries(values)) {
       const i = sqlite3.bind_parameter_index(this._ptr, param);
       if (i === 0)
         throw new SQLite3Error(`Unknown binding parameter: "${param}"`);
