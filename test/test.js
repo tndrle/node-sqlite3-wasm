@@ -660,6 +660,34 @@ describe("Transaction", function () {
   });
 });
 
+describe("FTS5", function () {
+  before(function () {
+    this.db = open();
+    this.db.exec("CREATE VIRTUAL TABLE t USING FTS5(a, b)");
+    this.db.exec(`INSERT INTO t (a, b) VALUES
+      ('this is a test', 'another test'),
+      ('second test', 'nothing'),
+      ('nothing', 'really')`);
+  });
+
+  after(function () {
+    this.db.close();
+  });
+
+  it("search", function () {
+    assert.deepEqual(this.db.all("SELECT * FROM t WHERE t MATCH 'test'"), [
+      {
+        a: "this is a test",
+        b: "another test",
+      },
+      {
+        a: "second test",
+        b: "nothing",
+      },
+    ]);
+  });
+});
+
 describe("Large BLOBs and strings", function () {
   before(function () {
     this.db = open();
