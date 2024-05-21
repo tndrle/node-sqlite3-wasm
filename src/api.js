@@ -106,6 +106,7 @@ Module.onRuntimeInitialized = () => {
     result_error: [v, n3],
     column_table_name: [s, n2],
     get_autocommit: [n, n1],
+    column_origin_name: [s, n2]
   };
   for (const [name, sig] of Object.entries(signatures)) {
     sqlite3[name] = cwrap(`sqlite3_${name}`, sig[0], sig[1]);
@@ -335,6 +336,15 @@ class Database {
     return this._query(sql, values, true, expand);
   }
 
+  raw(sql, values) {
+    const stmt = this.prepare(sql);
+    try {
+      return stmt.raw(values);
+    } finally {
+      stmt.finalize();
+    }
+  }
+
   _query(sql, values, single, expand) {
     const stmt = this.prepare(sql);
     try {
@@ -370,6 +380,8 @@ class Statement {
     if (this._ptr === NULL) throw new SQLite3Error("Nothing to prepare");
 
     this._db = db;
+
+    this._columns = [];
   }
 
   get database() {
@@ -392,7 +404,7 @@ class Statement {
   }
 
   iterate(values, { expand = false } = {}) {
-    return this._queryRows(values, expand);
+    return this._queryRows(values, expand, false);
   }
 
   all(values, { expand = false } = {}) {
@@ -400,8 +412,15 @@ class Statement {
   }
 
   get(values, { expand = false } = {}) {
-    const result = this._queryRows(values, expand).next();
+    const result = this._queryRows(values, expand, false).next();
     return result.done ? null : result.value;
+  }
+
+  raw(values) {
+    const rows = Array.from(this._queryRows(values, false, true));
+    return {
+      columns: this._columns, rows
+    };
   }
 
   finalize() {
@@ -421,12 +440,12 @@ class Statement {
     );
   }
 
-  *_queryRows(values, expand) {
+  *_queryRows(values, expand, asArray) {
     this._assertReady();
 
     this._bind(values);
-    const columns = this._getColumnNames();
-    while (this._step()) yield this._getRow(columns, expand);
+    this._getColumns();
+    while (this._step()) yield this._getRow(expand, asArray);
   }
 
   _bind(values) {
@@ -456,11 +475,18 @@ class Statement {
     }
   }
 
-  _getRow(columns, expand) {
+  _getRow(expand, asArray) {
     const row = {};
-    for (let i = 0; i < columns.length; i++) {
+    const array = asArray ? new Array(this._columns.length) : null;
+    for (let i = 0; i < this._columns.length; i++) {
       let v;
-      const colType = sqlite3.column_type(this._ptr, i);
+      let colType = this._columns[i].type;
+      if (colType === null) {
+        colType = sqlite3.column_type(this._ptr, i);
+        this._columns[i].type = colType
+        this._columns[i].typeName = this._getTypeName(colType);
+      }
+
       switch (colType) {
         case SQLITE_INTEGER:
           v = toNumberOrNot(sqlite3.column_int64(this._ptr, i));
@@ -483,28 +509,55 @@ class Statement {
           v = null;
           break;
       }
-      const column = columns[i];
-      if (expand) {
-        let table = sqlite3.column_table_name(this._ptr, i);
-        table = table === "" ? "$" : table;
-        if (Object.hasOwn(row, table)) {
-          row[table][column] = v;
-        } else {
-          row[table] = { [column]: v };
-        }
+
+      if (asArray) {
+        array[i] = v;
       } else {
-        row[column] = v;
+        if (expand) {
+          let table = this._columns[i].table;
+          table = table === "" ? "$" : table;
+          if (Object.hasOwn(row, table)) {
+            row[table][this._columns[i].name] = v;
+          } else {
+            row[table] = { [this._columns[i].name]: v };
+          }
+        } else {
+          row[this._columns[i].name] = v;
+        }
       }
     }
-    return row;
+    return asArray ? array : row;
   }
 
-  _getColumnNames() {
-    const names = [];
+  _getColumns() {
+
+    if (this._columns.length > 0) return;
+
     const columns = sqlite3.column_count(this._ptr);
     for (let i = 0; i < columns; i++)
-      names.push(sqlite3.column_name(this._ptr, i));
-    return names;
+      this._columns.push({
+        name: sqlite3.column_name(this._ptr, i)
+        , type: null
+        , typeName: null
+        , table: sqlite3.column_table_name(this._ptr, i)
+        , column: sqlite3.column_origin_name(this._ptr, i)
+      });
+
+  }
+
+  _getTypeName(type) {
+    switch (type) {
+      case SQLITE_INTEGER:
+        return "INTEGER";
+      case SQLITE_FLOAT:
+        return "FLOAT";
+      case SQLITE_TEXT:
+        return "TEXT";
+      case SQLITE_BLOB:
+        return "BLOB";
+      case SQLITE_NULL:
+        return "NULL";
+    }
   }
 
   _bindArray(values) {

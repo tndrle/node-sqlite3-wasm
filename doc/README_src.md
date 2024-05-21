@@ -52,6 +52,7 @@ manually close** a database, otherwise you risk **memory leaks** (see
 - [](#db.all)
 - [](#db.get)
 - [](#db.run)
+- [](#db.raw)
 
 These convenience methods use a prepared statement internally and take care of
 finalizing it.
@@ -102,6 +103,7 @@ Methods
 - [](#db.get)
 - [](#db.prepare)
 - [](#db.run)
+- [](#db.raw)
 
 Properties
 
@@ -300,6 +302,22 @@ db.run("INSERT INTO book VALUES (@id, :title)", {
 });
 ```
 
+### `Database.raw(sql, [values]) -> info`
+
+Creates a prepared statement, executes it with the given values and returns an
+object with the properties `columns` and `rows`. `columns` is an array of objects describing the columns returned, `rows` is an array of arrays, representing the rows and values.
+The prepared statement is finalized automatically.
+
+Arguments
+
+- `sql`: string containing the SQL statement
+- `values` (optional): values to bind to the statement's parameters. Either a
+  single value, an array, or an object in case of named parameters.
+
+```js
+db.raw("SELECT * FROM book WHERE id = ?", 7);
+```
+
 ### `Database.inTransaction`
 
 Property determining whether the database is currently in a transaction.
@@ -332,6 +350,7 @@ Methods
 - [](#stmt.get)
 - [](#stmt.iterate)
 - [](#stmt.run)
+- [](#stmt.raw)
 
 Properties
 
@@ -356,6 +375,7 @@ convenience methods
 - [](#db.all)
 - [](#db.get)
 - [](#db.run)
+- [](#db.raw)
 
 These convenience methods use a prepared statement internally and take care of
 finalizing it.
@@ -432,6 +452,17 @@ Arguments
   single value, an array, or an object in case of named parameters.
 
 See also [](#db.run)
+
+### `Statement.raw([values]) -> info`
+
+Executes the prepared statement with the given values and returns an object with the properties `columns` and `rows`. `columns` is an array of objects describing the columns returned, `rows` is an array of arrays, representing the rows and values.
+
+Arguments
+
+- `values` (optional): values to bind to the statement's parameters. Either a
+  single value, an array, or an object in case of named parameters.
+
+See also [](#db.raw)
 
 ### `Statement.database`
 

@@ -765,3 +765,52 @@ describe("VFS", function () {
     fs.rmSync("test.db.lock", { recursive: true, force: true });
   });
 });
+
+
+describe("raw", function () {
+  before(function () {
+    this.db = open();
+    this.db.exec("CREATE TABLE a (x TEXT, y TEXT, z int)");
+    this.db.run("INSERT INTO a VALUES (?, ?, ?)", ["x", "y", 1]);
+    this.db.run("INSERT INTO a VALUES (?, ?, ?)", ["a", "b", 2]);
+  });
+
+  after(function () {
+    this.db.close();
+  });
+
+  it("columns and rows", function () {
+    assert.deepEqual(this.db.raw("SELECT * FROM a"), {
+      columns: [
+        { column: 'x', name: 'x', type: 3, typeName: 'TEXT', table: 'a' },
+        { column: 'y', name: 'y', type: 3, typeName: 'TEXT', table: 'a' },
+        { column: 'z', name: 'z', type: 1, typeName: 'INTEGER', table: 'a' }
+      ],
+      rows: [['x', 'y', 1], ['a', 'b', 2]]
+    });
+  });
+
+  it("specific columns", function () {
+    assert.deepEqual(this.db.raw("SELECT x FROM a"), {
+      columns: [
+        { column: 'x', name: 'x', type: 3, typeName: 'TEXT', table: 'a' }
+      ],
+      rows: [['x'], ['a']]
+    });
+  });
+  it("overlapping columns", function () {
+    assert.deepEqual(this.db.raw("SELECT x as a, y FROM a"), {
+      columns: [
+        { column: 'x', name: 'a', type: 3, typeName: 'TEXT', table: 'a' },
+        { column: 'y', name: 'y', type: 3, typeName: 'TEXT', table: 'a' }
+      ],
+      rows: [['x', 'y'], ['a', 'b']]
+    });
+  });
+  it("no table", function () {
+    assert.deepEqual(this.db.raw("SELECT 1;"), {
+      columns: [{ name: '1', type: 1, typeName: 'INTEGER', table: '', column: '' }],
+      rows: [[1]]
+    });
+  });
+});
