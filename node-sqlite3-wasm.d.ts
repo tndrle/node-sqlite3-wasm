@@ -30,6 +30,11 @@ declare module "node-sqlite3-wasm" {
     expand?: boolean;
   }
 
+  interface RawResult { 
+    columns: {name: string, type: number, typeName: string, table: string, column: string}[];
+    rows: SQLiteValue[][];
+  }
+
   type SQLiteValue = number | bigint | string | Uint8Array | null;
   type JSValue = boolean | SQLiteValue;
 
@@ -67,6 +72,11 @@ declare module "node-sqlite3-wasm" {
       values?: BindValues,
       options?: QueryOptions
     ): QueryResult | null;
+    raw(
+      sql: string,
+      values?: BindValues,
+    ): RawResult | null;
+    
   }
 
   class Statement {
@@ -80,6 +90,7 @@ declare module "node-sqlite3-wasm" {
     ): IterableIterator<QueryResult>;
     all(values?: BindValues, options?: QueryOptions): QueryResult[];
     get(values?: BindValues, options?: QueryOptions): QueryResult | null;
+    raw(values?: BindValues): RawResult | null;
     finalize(): void;
   }
 
