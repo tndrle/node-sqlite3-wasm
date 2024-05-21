@@ -814,3 +814,29 @@ describe("raw", function () {
     });
   });
 });
+
+
+
+describe("column with nulls identifies the right type", function () {
+  before(function () {
+    this.db = open();
+    this.db.exec("CREATE TABLE a (x TEXT, y TEXT)");
+    this.db.run("INSERT INTO a VALUES (?, ?)", [null, "y"]);
+    this.db.run("INSERT INTO a VALUES (?, ?)", ["a", null]);
+  });
+
+  after(function () {
+    this.db.close();
+  });
+
+  it("nulls", function () {
+    assert.deepEqual(this.db.raw("SELECT * FROM a"), {
+      columns: [
+        { column: 'x', name: 'x', type: 3, typeName: 'TEXT', table: 'a' },
+        { column: 'y', name: 'y', type: 3, typeName: 'TEXT', table: 'a' },
+      ],
+      rows: [[null, 'y'], ['a', null]]
+    });
+  });
+
+});

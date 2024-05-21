@@ -480,9 +480,8 @@ class Statement {
     const array = asArray ? new Array(this._columns.length) : null;
     for (let i = 0; i < this._columns.length; i++) {
       let v;
-      let colType = this._columns[i].type;
-      if (colType === null) {
-        colType = sqlite3.column_type(this._ptr, i);
+      let colType = sqlite3.column_type(this._ptr, i);
+      if (colType !== SQLITE_NULL && this._columns[i].type === SQLITE_NULL) {
         this._columns[i].type = colType
         this._columns[i].typeName = this._getTypeName(colType);
       }
@@ -537,8 +536,8 @@ class Statement {
     for (let i = 0; i < columns; i++)
       this._columns.push({
         name: sqlite3.column_name(this._ptr, i)
-        , type: null
-        , typeName: null
+        , type: SQLITE_NULL
+        , typeName: "NULL"
         , table: sqlite3.column_table_name(this._ptr, i)
         , column: sqlite3.column_origin_name(this._ptr, i)
       });
