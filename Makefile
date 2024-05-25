@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
-SQLITE_URL = https://www.sqlite.org/2024/sqlite-amalgamation-3450300.zip
-SQLITE_HASH = c514a2640102a43adb1ea17056df3e6772c3b5aea94e0e64d5c819156f540952
+SQLITE_URL = https://www.sqlite.org/2024/sqlite-amalgamation-3460000.zip
+SQLITE_HASH = 1221eed70de626871912bfca144c00411f0c30d3c2b7935cff3963b63370ef7c
 SQLITE_SRC_FILES = sqlite-src/sqlite3.c sqlite-src/sqlite3.h
 
 JS_PRE_FILES = src/api.js src/vfs-pre.js
