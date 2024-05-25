@@ -15,7 +15,7 @@ jobs:
             current_ver = re.search(r'emscripten/emsdk:(\d+\.\d+\.\d+)', file.read()).group(1)
           with urlopen('https://hub.docker.com/v2/repositories/emscripten/emsdk/tags') as req:
             results = json.loads(req.read())['results']
-            new_ver = next(r['name'] for r in results if re.match(r'\d+\.\d+\.\d+', r['name']))
+            new_ver = next(r['name'] for r in results if re.fullmatch(r'\d+\.\d+\.\d+', r['name']))
           if current_ver != new_ver:
             os.system(f'gh workflow run create-pr-new-emscripten.yml -f version="{new_ver}"')
         shell: python
