@@ -2,9 +2,10 @@ name: Tests
 on:
   push:
     branches:
-      - "*"
+      - "*"  # exclude tags
 jobs:
   tests:
+    if: "!endsWith(github.event.head_commit.message, '[build]')"
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-11, macos-12]
