@@ -688,6 +688,20 @@ describe("FTS5", function () {
   });
 });
 
+describe("DBSTAT virtual table", function () {
+  before(function () {
+    this.db = open();
+  });
+
+  after(function () {
+    this.db.close();
+  });
+
+  it("exists", function () {
+    assert.strictEqual(this.db.get("SELECT * FROM dbstat"), null);
+  });
+});
+
 describe("Large BLOBs and strings", function () {
   before(function () {
     this.db = open();
