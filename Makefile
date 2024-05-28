@@ -78,15 +78,11 @@ $(EXPORTED_FUNCS_JSON): src/api.js
 .PHONY: download
 download: $(SQLITE_SRC_FILES)
 
+SQLITE_ZIP = sqlite-src/sqlite.zip
+
 $(SQLITE_SRC_FILES):
-	mkdir -p sqlite-src/tmp
-	curl -LsSf '$(SQLITE_URL)' -o sqlite-src/sqlite.zip
-	# verify checksum
-	diff -q <(echo $(SQLITE_HASH)) \
-		<(echo $$(openssl dgst -sha3-256 sqlite-src/sqlite.zip | awk '{print $$NF}'))
-	# unpack required files
-	unzip -u sqlite-src/sqlite.zip -d sqlite-src/tmp/
-	mv $$(find sqlite-src/tmp/ -name sqlite3.h) sqlite-src/
-	mv $$(find sqlite-src/tmp/ -name sqlite3.c) sqlite-src/
-	rm -rf sqlite-src/sqlite.zip sqlite-src/tmp
-	touch sqlite-src/sqlite3.{h,c}
+	mkdir -p sqlite-src
+	curl -LsSf '$(SQLITE_URL)' -o $(SQLITE_ZIP)
+	[ $(SQLITE_HASH) == $$(openssl dgst -sha3-256 $(SQLITE_ZIP) | awk '{print $$NF}') ]
+	unzip -ojDD $(SQLITE_ZIP) "*/sqlite3.c" "*/sqlite3.h" -d sqlite-src/
+	rm $(SQLITE_ZIP)
