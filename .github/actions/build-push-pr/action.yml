@@ -1,0 +1,27 @@
+name: Build and push all changes, optionally create a PR
+inputs:
+  message:
+    description: The commit message (and PR title and body)
+    required: true
+  target-branch:
+    description: The name of a new branch to create (if desired)
+  create-pr:
+    description: Set to 'yes' if a PR should be created
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/git-user-config
+    - if: inputs.target-branch != ''
+      run: |
+        git checkout -b ${{ inputs.target-branch }}
+        git config --local push.autoSetupRemote true
+      shell: bash
+    - run: |
+        npm run clean
+        npm run build
+        git commit -am"${{ inputs.message }}"
+        git push
+      shell: bash
+    - if: inputs.create-pr == 'yes'
+      run: gh pr create -t "${{ inputs.message }}" -b "${{ inputs.message }}"
+      shell: bash

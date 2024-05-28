@@ -1,9 +1,9 @@
-name: "Create PR for new emscripten version"
+name: Create PR for new emscripten version
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version (e.g. 3.1.31)"
+        description: Version (e.g. 3.1.31)
         required: true
 env:
   branch: update-emscripten-${{ inputs.version }}
@@ -11,16 +11,17 @@ jobs:
   create-pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PAT }}
-          fetch-depth: 0
-      - run: "! git checkout ${{ env.branch }} -- # branch already exists?"
+          token: ${{ secrets.PAT }} # allows subsequent workflows
+          fetch-depth: 0 # for checking whether target branch already exists
+      - run: "! git checkout ${{ env.branch }} --" # branch already exists?
       - run: |
-          perl -pi -e "s|(emscripten/emsdk:)\d+\.\d+\.\d+|\${1}${{ inputs.version }}|" package.json
-      - uses: ./.github/actions/create-pr
+          perl -pi -e "s|emscripten/emsdk:\K\d+\.\d+\.\d+|${{ inputs.version }}|" package.json
+      - uses: ./.github/actions/build-push-pr
         with:
-          branch: ${{ env.branch }}
-          message: "Update to emscripten ${{ inputs.version }}"
+          target-branch: ${{ env.branch }}
+          message: Update to emscripten ${{ inputs.version }}
+          create-pr: "yes" # must be a string
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for GitHub CLI in action

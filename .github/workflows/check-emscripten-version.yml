@@ -1,4 +1,4 @@
-name: "Check emscripten version"
+name: Check emscripten version
 on:
   workflow_dispatch:
   schedule:
@@ -7,12 +7,12 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: |
           import re, os, json
           from urllib.request import urlopen
           with open('package.json') as file:
-            current_ver = re.search(r'emscripten/emsdk:(\d+\.\d+\.\d+)', file.read()).group(1)
+            current_ver = re.search(r'emscripten/emsdk:(\d+\.\d+\.\d+)', file.read())[1]
           with urlopen('https://hub.docker.com/v2/repositories/emscripten/emsdk/tags') as req:
             results = json.loads(req.read())['results']
             new_ver = next(r['name'] for r in results if re.fullmatch(r'\d+\.\d+\.\d+', r['name']))
@@ -20,4 +20,4 @@ jobs:
             os.system(f'gh workflow run create-pr-new-emscripten.yml -f version="{new_ver}"')
         shell: python
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for GitHub CLI

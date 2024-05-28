@@ -1,19 +1,18 @@
 name: Tests
 on:
   push:
-    branches:
-      - "*"  # exclude tags
+    branches: ["*"] # exclude tags
 jobs:
   tests:
     if: "!endsWith(github.event.head_commit.message, '[build]')"
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-11, macos-12]
-        node-version: [18.x, 20.x]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        node-version: [18.x, 20.x, 21.x, 22.x]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm clean-install

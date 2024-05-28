@@ -1,4 +1,4 @@
-name: "Check SQLite version"
+name: Check SQLite version
 on:
   workflow_dispatch:
   schedule:
@@ -7,12 +7,12 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: |
           import re, os
           from urllib.request import urlopen
           with open('Makefile') as file:
-            current_ver = re.search(r'amalgamation-(\d+)\.zip', file.read()).group(1)
+            current_ver = re.search(r'amalgamation-(\d+)\.zip', file.read())[1]
           with urlopen('https://www.sqlite.org/download.html') as req:
             url, new_ver, hash = re.search(
               r'^PRODUCT,[\d.]+,(.+?-amalgamation-(\d+)\.zip),\d+,([a-f\d]+),?',
@@ -23,4 +23,4 @@ jobs:
             os.system(f'gh workflow run create-pr-new-sqlite.yml -f url="{url}" -f hash="{hash}"')
         shell: python
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for GitHub CLI

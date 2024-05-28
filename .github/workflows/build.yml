@@ -1,26 +1,22 @@
 # Executes the "build" command on every pushed commit whose
-# commit message ends in "[build]".
+# commit message ends in "[build]". The resulting changes are
+# added in a commit with the same commit message but without
+# the suffix "[build]".
 name: Build
 on:
   push:
-    branches:
-      - "*"  # exclude tags
+    branches: ["*"] # exclude tags
 jobs:
   build:
-    if: "endsWith(github.event.head_commit.message, '[build]')"
+    if: endsWith(github.event.head_commit.message, '[build]')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
         with:
-          node-version: 20.x
+          token: ${{ secrets.PAT }} # allows subsequent workflows
       - run: |
-          npm clean-install
-          npm run clean
-          npm run build
-          git config --local user.name "${{ github.actor }}"
-          git config --local user.email "${{ github.actor }}@users.noreply.github.com"
-          git add -u
           MSG=$(perl -pe 's/\s*\[build\]$//i' <<< "${{ github.event.head_commit.message }}")
-          git commit -m"$MSG"
-          git push
+          echo "msg=\"$MSG\"" >> $GITHUB_ENV
+      - uses: ./.github/actions/build-push-pr
+        with:
+          message: ${{ env.msg }}

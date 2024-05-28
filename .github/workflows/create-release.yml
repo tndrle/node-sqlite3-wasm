@@ -1,28 +1,24 @@
-name: "Bump version and create draft release"
+name: Bump version and create draft release
 on:
   workflow_dispatch:
     inputs:
       field:
-        description: "Version field to bump"
+        description: Version field to bump
         type: choice
-        options:
-          - patch
-          - minor
-          - major
+        options: [patch, minor, major]
         required: true
 jobs:
   create-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PAT }}
+          token: ${{ secrets.PAT }} # allows subsequent workflows
+      - uses: ./.github/actions/git-user-config
       - run: |
-          git config --local user.name "${{ github.actor }}"
-          git config --local user.email "${{ github.actor }}@users.noreply.github.com"
           npm version ${{ inputs.field }}
           git push
           git push --tags
           gh release create $(git describe) -d --latest --verify-tag --generate-notes
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for GitHub CLI

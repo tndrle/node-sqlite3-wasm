@@ -1,36 +1,33 @@
-name: "Create PR for new SQLite version"
+name: Create PR for new SQLite version
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: "URL suffix (e.g. 2022/sqlite-amalgamation-3400000.zip)"
+        description: URL suffix (e.g. 2022/sqlite-amalgamation-3400000.zip)
         required: true
       hash:
-        description: "Archive hash"
+        description: Archive hash
         required: true
 jobs:
   create-pr:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          import re, os
-          v = re.search(r'amalgamation-(\d+)\.zip', '${{ inputs.url }}').group(1)
-          version = f'{int(v[0])}.{int(v[1:3])}.{int(v[3:5])}'
-          with open(os.getenv('GITHUB_ENV'), 'a') as file:
-            file.write(f'version={version}\n')
-            file.write(f'branch=update-sqlite-{version}\n')
-        shell: python
-      - uses: actions/checkout@v3
+          V=$(perl -pe 's/.*-3(\d\d)(\d\d)00\.zip/sprintf "3.%d.%d",$1,$2/e' <<< "${{ inputs.url }}")
+          echo "version=$V" >> $GITHUB_ENV
+          echo "branch=update-sqlite-$V" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PAT }}
-          fetch-depth: 0
-      - run: "! git checkout ${{ env.branch }} -- # branch already exists?"
+          token: ${{ secrets.PAT }} # allows subsequent workflows
+          fetch-depth: 0 # for checking whether target branch already exists
+      - run: "! git checkout ${{ env.branch }} --" # branch already exists?
       - run: |
-          perl -pi -e "s|^(\s*SQLITE_URL\s*=\s*).*|\${1}https://www.sqlite.org/${{ inputs.url }}|" Makefile
-          perl -pi -e "s|^(\s*SQLITE_HASH\s*=\s*).*|\${1}${{ inputs.hash }}|" Makefile
-      - uses: ./.github/actions/create-pr
+          perl -pi -e "s|^SQLITE_URL = .+org/\K.*|${{ inputs.url }}|" Makefile
+          perl -pi -e "s|^SQLITE_HASH = \K.*|${{ inputs.hash }}|" Makefile
+      - uses: ./.github/actions/build-push-pr
         with:
-          branch: ${{ env.branch }}
-          message: "Update to SQLite ${{ env.version }}"
+          target-branch: ${{ env.branch }}
+          message: Update to SQLite ${{ env.version }}
+          create-pr: "yes" # must be a string
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for GitHub CLI in action
