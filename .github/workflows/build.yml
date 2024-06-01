@@ -16,7 +16,7 @@ jobs:
           token: ${{ secrets.PAT }} # allows subsequent workflows
       - run: |
           MSG=$(perl -pe 's/\s*\[build\]$//i' <<< "${{ github.event.head_commit.message }}")
-          echo "msg=\"$MSG\"" >> $GITHUB_ENV
+          echo "msg=$MSG" >> $GITHUB_ENV
       - uses: ./.github/actions/build-push-pr
         with:
           message: ${{ env.msg }}
