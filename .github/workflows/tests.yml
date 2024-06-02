@@ -17,3 +17,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: npm clean-install
       - run: npm test
+  collect-test-results:
+    runs-on: ubuntu-latest
+    needs: tests
+    if: always()
+    steps:
+      - if: contains(needs.*.result, 'failure')
+        run: exit 1
