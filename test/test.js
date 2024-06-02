@@ -436,6 +436,20 @@ describe("Query values", function () {
     );
   });
 
+  it("query rows as arrays", function () {
+    assert.deepEqual(
+      this.db.get("SELECT * FROM a", undefined, { asArray: true }),
+      ["x", "y"]
+    );
+    assert.deepEqual(
+      this.db.all("SELECT * FROM a", undefined, { asArray: true }),
+      [
+        ["x", "y"],
+        ["a", "b"],
+      ]
+    );
+  });
+
   it("expression and expand -> $", function () {
     assert.deepEqual(
       this.db.get("SELECT sin(0)", undefined, { expand: true }),
@@ -455,6 +469,9 @@ describe("Prepared statements", function () {
   before(function () {
     this.db = open();
     this.db.exec("CREATE TABLE a (x INTEGER)");
+    this.db.exec("CREATE TABLE b (x TEXT, y TEXT)");
+    this.db.run("INSERT INTO b VALUES (?, ?)", ["x", "y"]);
+    this.db.run("INSERT INTO b VALUES (?, ?)", ["a", "b"]);
   });
 
   after(function () {
@@ -481,6 +498,20 @@ describe("Prepared statements", function () {
       { column1: 2 },
     ]);
 
+    stmt.finalize();
+  });
+
+  it("query rows as arrays", function () {
+    const stmt = this.db.prepare("SELECT * FROM b");
+    assert.deepEqual(stmt.get(undefined, { asArray: true }), ["x", "y"]);
+    assert.deepEqual(stmt.all(undefined, { asArray: true }), [
+      ["x", "y"],
+      ["a", "b"],
+    ]);
+    assert.deepEqual(Array.from(stmt.iterate(undefined, { asArray: true })), [
+      ["x", "y"],
+      ["a", "b"],
+    ]);
     stmt.finalize();
   });
 

@@ -327,21 +327,21 @@ class Database {
     }
   }
 
-  all(sql, values, { expand = false } = {}) {
-    return this._query(sql, values, false, expand);
+  all(sql, values, { expand = false, asArray = false } = {}) {
+    return this._query(sql, values, false, expand, asArray);
   }
 
-  get(sql, values, { expand = false } = {}) {
-    return this._query(sql, values, true, expand);
+  get(sql, values, { expand = false, asArray = false } = {}) {
+    return this._query(sql, values, true, expand, asArray);
   }
 
-  _query(sql, values, single, expand) {
+  _query(sql, values, single, expand, asArray) {
     const stmt = this.prepare(sql);
     try {
       if (single) {
-        return stmt.get(values, { expand });
+        return stmt.get(values, { expand, asArray });
       } else {
-        return stmt.all(values, { expand });
+        return stmt.all(values, { expand, asArray });
       }
     } finally {
       stmt.finalize();
@@ -391,16 +391,16 @@ class Statement {
     };
   }
 
-  iterate(values, { expand = false } = {}) {
-    return this._queryRows(values, expand);
+  iterate(values, { expand = false, asArray = false } = {}) {
+    return this._queryRows(values, expand, asArray);
   }
 
-  all(values, { expand = false } = {}) {
-    return Array.from(this.iterate(values, { expand }));
+  all(values, { expand = false, asArray = false } = {}) {
+    return Array.from(this.iterate(values, { expand, asArray }));
   }
 
-  get(values, { expand = false } = {}) {
-    const result = this._queryRows(values, expand).next();
+  get(values, { expand = false, asArray = false } = {}) {
+    const result = this._queryRows(values, expand, asArray).next();
     return result.done ? null : result.value;
   }
 
@@ -421,12 +421,22 @@ class Statement {
     );
   }
 
-  *_queryRows(values, expand) {
+  *_queryRows(values, expand, asArray) {
     this._assertReady();
+    if (expand && asArray)
+      throw new SQLite3Error("Cannot expand when returning rows as arrays");
 
     this._bind(values);
-    const columns = this._getColumnNames();
-    while (this._step()) yield this._getRow(columns, expand);
+
+    const columns = sqlite3.column_count(this._ptr);
+    let columnNames = null;
+    if (!asArray) {
+      columnNames = [];
+      for (let i = 0; i < columns; i++)
+        columnNames.push(sqlite3.column_name(this._ptr, i));
+    }
+
+    while (this._step()) yield this._getRow(columns, columnNames, expand);
   }
 
   _bind(values) {
@@ -456,9 +466,10 @@ class Statement {
     }
   }
 
-  _getRow(columns, expand) {
-    const row = {};
-    for (let i = 0; i < columns.length; i++) {
+  _getRow(columns, columnNames, expand) {
+    const asArray = columnNames === null;
+    const row = asArray ? [] : {};
+    for (let i = 0; i < columns; i++) {
       let v;
       const colType = sqlite3.column_type(this._ptr, i);
       switch (colType) {
@@ -483,28 +494,24 @@ class Statement {
           v = null;
           break;
       }
-      const column = columns[i];
-      if (expand) {
-        let table = sqlite3.column_table_name(this._ptr, i);
-        table = table === "" ? "$" : table;
-        if (Object.hasOwn(row, table)) {
-          row[table][column] = v;
-        } else {
-          row[table] = { [column]: v };
-        }
+      if (asArray) {
+        row.push(v);
       } else {
-        row[column] = v;
+        const columnName = columnNames[i];
+        if (expand) {
+          let table = sqlite3.column_table_name(this._ptr, i);
+          table = table === "" ? "$" : table;
+          if (Object.hasOwn(row, table)) {
+            row[table][columnName] = v;
+          } else {
+            row[table] = { [columnName]: v };
+          }
+        } else {
+          row[columnName] = v;
+        }
       }
     }
     return row;
-  }
-
-  _getColumnNames() {
-    const names = [];
-    const columns = sqlite3.column_count(this._ptr);
-    for (let i = 0; i < columns; i++)
-      names.push(sqlite3.column_name(this._ptr, i));
-    return names;
   }
 
   _bindArray(values) {
