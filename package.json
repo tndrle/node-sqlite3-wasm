@@ -25,7 +25,7 @@
     "node-sqlite3-wasm.d.ts"
   ],
   "scripts": {
-    "_docker": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:4.0.4",
+    "_docker": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:4.0.5",
     "test": "mocha --timeout 10000",
     "test:coverage": "c8 -r html mocha --timeout 10000",
     "build:dist": "npm run _docker make",
