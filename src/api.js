@@ -507,6 +507,14 @@ class Statement {
     return names;
   }
 
+  _getColumnTypes() {
+    const names = [];
+    const columns = sqlite3.column_count(this._ptr);
+    for (let i = 0; i < columns; i++)
+      names.push(sqlite3.column_type(this._ptr, i));
+    return names;
+  }
+
   _bindArray(values) {
     for (let i = 0; i < values.length; i++) this._bindValue(values[i], i + 1);
   }
