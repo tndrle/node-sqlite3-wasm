@@ -1,6 +1,6 @@
 {
   "name": "node-sqlite3-wasm",
-  "version": "0.8.39",
+  "version": "0.8.40",
   "description": "WebAssembly port of SQLite3 for Node.js with file system access",
   "homepage": "https://github.com/tndrle/node-sqlite3-wasm",
   "author": "Tobias Enderle",
