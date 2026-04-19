@@ -11,7 +11,7 @@ jobs:
     if: endsWith(github.event.head_commit.message, '[build]')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.PAT }} # allows subsequent workflows
       - run: |

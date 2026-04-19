@@ -11,7 +11,7 @@ jobs:
   create-pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.PAT }} # allows subsequent workflows
           fetch-depth: 0 # for checking whether target branch already exists

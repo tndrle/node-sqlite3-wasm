@@ -11,7 +11,7 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.PAT }} # allows subsequent workflows
       - uses: ./.github/actions/git-user-config

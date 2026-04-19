@@ -16,7 +16,7 @@ jobs:
           V=$(perl -pe 's/.*-3(\d\d)(\d\d)00\.zip/sprintf "3.%d.%d",$1,$2/e' <<< "${{ inputs.url }}")
           echo "version=$V" >> $GITHUB_ENV
           echo "branch=update-sqlite-$V" >> $GITHUB_ENV
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.PAT }} # allows subsequent workflows
           fetch-depth: 0 # for checking whether target branch already exists
