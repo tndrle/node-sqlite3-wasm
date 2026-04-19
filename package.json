@@ -30,8 +30,8 @@
   ],
   "scripts": {
     "_docker": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:5.0.6",
-    "test": "mocha --timeout 10000",
-    "test:coverage": "c8 -r html mocha --timeout 10000",
+    "test": "node --test",
+    "test:coverage": "c8 -r html node --test",
     "build:dist": "npm run _docker make",
     "build:coverage": "npm run _docker make coverage",
     "build:doc": "npm run _docker python3 doc/create_readme.py",
@@ -40,7 +40,6 @@
     "clean": "rm -rf build dist sqlite-src"
   },
   "devDependencies": {
-    "c8": "^10.1.2",
-    "mocha": "^11.7.5"
+    "c8": "^11.0.0"
   }
 }

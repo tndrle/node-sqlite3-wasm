@@ -13,8 +13,8 @@ with open('doc/README_src.md') as file:
 content = content.replace('%%sqlite_version%%', sqlite_version)
 
 def extract_link(heading):
-  display = re.sub('\).*', ')', re.sub('\(.+\)', '()', heading))
-  anchor = re.sub('[.()\[\],<>]', '', heading).replace(' ', '-').lower()
+  display = re.sub(r'\).*', ')', re.sub(r'\(.+\)', '()', heading))
+  anchor = re.sub(r'[.()\[\],<>]', '', heading).replace(' ', '-').lower()
   ref = re.sub('^database', 'db', display.lower())
   ref = re.sub('^statement', 'stmt', ref).replace('()', '')
   return Link(ref, anchor, display)
@@ -29,4 +29,4 @@ def insert_link(match):
   return f'[`{display}`](#{l.anchor})'
 
 with open('README.md', 'w') as file:
-  file.write(re.sub('\[(.*?)\]\(#(.+?)\)', insert_link, content))
+  file.write(re.sub(r'\[(.*?)\]\(#(.+?)\)', insert_link, content))

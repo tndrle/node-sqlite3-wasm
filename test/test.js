@@ -2,6 +2,9 @@
 
 const { Database } = require("../dist/node-sqlite3-wasm.js");
 const assert = require("node:assert/strict");
+const { describe, it, beforeEach, afterEach, before, after } = require(
+  'node:test'
+);
 const fs = require("node:fs");
 
 function open() {
@@ -13,8 +16,8 @@ function open() {
   return new Database("test.db");
 }
 
-describe("SQLite version", function () {
-  it("check version", function () {
+describe("SQLite version", () => {
+  it("check version", () => {
     const content = fs.readFileSync("Makefile", "utf8");
     const v = content.match(/amalgamation-(\d+)\.zip/)[1];
     const major = v[0];
@@ -29,32 +32,34 @@ describe("SQLite version", function () {
   });
 });
 
-describe("Open database", function () {
-  beforeEach(function () {
-    this.db = null;
+describe("Open database", () => {
+  let db;
+
+  beforeEach(() => {
+    db = null;
   });
 
-  afterEach(function () {
-    if (this.db != null) this.db.close();
+  afterEach(() => {
+    if (db) db.close();
   });
 
-  it("memory database", function () {
-    this.db = new Database(":memory:");
+  it("memory database", () => {
+    db = new Database(":memory:");
   });
 
-  it("memory database (empty name)", function () {
-    this.db = new Database("");
+  it("memory database (empty name)", () => {
+    db = new Database("");
   });
 
-  it("memory database (no name)", function () {
-    this.db = new Database();
+  it("memory database (no name)", () => {
+    db = new Database();
   });
 
-  it("file database", function () {
-    this.db = open();
+  it("file database", () => {
+    db = open();
   });
 
-  it("file database (must exist)", function () {
+  it("file database (must exist)", () => {
     try {
       fs.unlinkSync("test.db");
     } catch (err) {
@@ -66,221 +71,233 @@ describe("Open database", function () {
     });
   });
 
-  it("file database (read-only, missing file)", function () {
+  it("file database (read-only, missing file)", () => {
     assert.throws(() => new Database("missing.db", { readOnly: true }), {
       name: "SQLite3Error",
       message: 'Could not open the database "missing.db"',
     });
   });
 
-  it("file database (read-only)", function () {
+  it("file database (read-only)", () => {
     new Database("test.db").close();
     new Database("test.db", { readOnly: true }).close();
   });
 });
 
-describe("Read-only database", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE TABLE a (x INTEGER)");
-    this.db.run("INSERT INTO a VALUES (?)", 1);
-    this.db.close();
-    this.db = new Database("test.db", { readOnly: true });
+describe("Read-only database", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE TABLE a (x INTEGER)");
+    db.run("INSERT INTO a VALUES (?)", 1);
+    db.close();
+    db = new Database("test.db", { readOnly: true });
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("read from read-only database", function () {
-    assert.strictEqual(this.db.get("SELECT * FROM a").x, 1);
+  it("read from read-only database", () => {
+    assert.strictEqual(db.get("SELECT * FROM a").x, 1);
   });
 
-  it("write to read-only database", function () {
-    assert.throws(() => this.db.exec("CREATE TABLE b (x INTEGER)"), {
+  it("write to read-only database", () => {
+    assert.throws(() => db.exec("CREATE TABLE b (x INTEGER)"), {
       name: "SQLite3Error",
       message: "attempt to write a readonly database",
     });
   });
 });
 
-describe("Working with closed database", function () {
-  before(function () {
-    this.db = open();
-    this.db.close();
+describe("Working with closed database", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.close();
   });
 
-  it("query", function () {
-    assert.throws(() => this.db.run("SELECT 1"), {
+  it("query", () => {
+    assert.throws(() => db.run("SELECT 1"), {
       name: "SQLite3Error",
       message: "Database already closed",
     });
   });
 });
 
-describe("Query basic values", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE TABLE a (x INTEGER)");
+describe("Query basic values", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE TABLE a (x INTEGER)");
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("no rows", function () {
-    assert.strictEqual(this.db.get("SELECT * FROM a"), null);
+  it("no rows", () => {
+    assert.strictEqual(db.get("SELECT * FROM a"), null);
   });
 
-  it("number", function () {
-    assert.strictEqual(this.db.get("SELECT 5 AS x").x, 5);
+  it("number", () => {
+    assert.strictEqual(db.get("SELECT 5 AS x").x, 5);
     assert.strictEqual(
-      this.db.get(`SELECT ${Number.MIN_SAFE_INTEGER} AS x`).x,
+      db.get(`SELECT ${Number.MIN_SAFE_INTEGER} AS x`).x,
       Number.MIN_SAFE_INTEGER
     );
     assert.strictEqual(
-      this.db.get(`SELECT ${Number.MAX_SAFE_INTEGER} AS x`).x,
+      db.get(`SELECT ${Number.MAX_SAFE_INTEGER} AS x`).x,
       Number.MAX_SAFE_INTEGER
     );
   });
 
-  it("bigint", function () {
+  it("bigint", () => {
     assert.strictEqual(
-      this.db.get(`SELECT (${Number.MIN_SAFE_INTEGER} - 1) AS x`).x,
+      db.get(`SELECT (${Number.MIN_SAFE_INTEGER} - 1) AS x`).x,
       BigInt(Number.MIN_SAFE_INTEGER) - 1n
     );
     assert.strictEqual(
-      this.db.get(`SELECT (${Number.MAX_SAFE_INTEGER} + 1) AS x`).x,
+      db.get(`SELECT (${Number.MAX_SAFE_INTEGER} + 1) AS x`).x,
       BigInt(Number.MAX_SAFE_INTEGER) + 1n
     );
   });
 
-  it("string", function () {
-    assert.strictEqual(this.db.get("SELECT 'test' AS x").x, "test");
+  it("string", () => {
+    assert.strictEqual(db.get("SELECT 'test' AS x").x, "test");
   });
 
-  it("null", function () {
-    assert.strictEqual(this.db.get("SELECT NULL AS x").x, null);
+  it("null", () => {
+    assert.strictEqual(db.get("SELECT NULL AS x").x, null);
   });
 
-  it("BLOB", function () {
+  it("BLOB", () => {
     assert.deepEqual(
-      this.db.get("SELECT zeroblob(2) AS x").x,
+      db.get("SELECT zeroblob(2) AS x").x,
       new Uint8Array(2)
     );
   });
 
-  it("BLOB too big", function () {
-    assert.throws(() => this.db.get("SELECT zeroblob(1000000001)"), {
+  it("BLOB too big", () => {
+    assert.throws(() => db.get("SELECT zeroblob(1000000001)"), {
       name: "SQLite3Error",
       message: "string or blob too big",
     });
   });
 
-  it("invalid SQL", function () {
-    assert.throws(() => this.db.get("SELEC 1"), {
+  it("invalid SQL", () => {
+    assert.throws(() => db.get("SELEC 1"), {
       name: "SQLite3Error",
       message: 'near "SELEC": syntax error',
     });
   });
 });
 
-describe("Basic operations", function () {
-  before(function () {
-    this.db = open();
+describe("Basic operations", () => {
+  let db;
+
+  before(() => {
+    db = open();
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("exec()", function () {
-    this.db.exec("CREATE TABLE IF NOT EXISTS a (x INTEGER)");
+  it("exec()", () => {
+    db.exec("CREATE TABLE IF NOT EXISTS a (x INTEGER)");
   });
 
-  it("run()", function () {
-    this.db.run("DROP TABLE IF EXISTS a");
+  it("run()", () => {
+    db.run("DROP TABLE IF EXISTS a");
   });
 
-  it("exec() fails", function () {
-    assert.throws(() => this.db.exec("DROP TABLE nonexistent"), {
+  it("exec() fails", () => {
+    assert.throws(() => db.exec("DROP TABLE nonexistent"), {
       name: "SQLite3Error",
       message: "no such table: nonexistent",
     });
   });
 
-  it("run() fails", function () {
-    assert.throws(() => this.db.run("DROP TABLE nonexistent"), {
+  it("run() fails", () => {
+    assert.throws(() => db.run("DROP TABLE nonexistent"), {
       name: "SQLite3Error",
       message: "no such table: nonexistent",
     });
   });
 });
 
-describe("Insert values", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE TABLE a (x INTEGER)");
+describe("Insert values", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE TABLE a (x INTEGER)");
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("Return of run()", function () {
-    const r = this.db.run("INSERT INTO a VALUES(?)", 1);
+  it("Return of run()", () => {
+    const r = db.run("INSERT INTO a VALUES(?)", 1);
     assert.strictEqual(r.changes, 1);
     assert.strictEqual(r.lastInsertRowid, 1);
   });
 });
 
-describe("Insert values - placeholders", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE TABLE a (x INTEGER, y INTEGER)");
+describe("Insert values - placeholders", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE TABLE a (x INTEGER, y INTEGER)");
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("? placeholder", function () {
-    const r = this.db.run("INSERT INTO a VALUES(?, ?)", [1, 2]);
+  it("? placeholder", () => {
+    const r = db.run("INSERT INTO a VALUES(?, ?)", [1, 2]);
     assert.strictEqual(r.changes, 1);
     assert.strictEqual(r.lastInsertRowid, 1);
   });
 
-  it("@ placeholder", function () {
+  it("@ placeholder", () => {
     assert.strictEqual(
-      this.db.run("INSERT INTO a VALUES(@a, @b)", { "@a": 1, "@b": 2 }).changes,
+      db.run("INSERT INTO a VALUES(@a, @b)", { "@a": 1, "@b": 2 }).changes,
       1
     );
   });
 
-  it(": placeholder", function () {
+  it(": placeholder", () => {
     assert.strictEqual(
-      this.db.run("INSERT INTO a VALUES(:a, :b)", { ":a": 1, ":b": 2 }).changes,
+      db.run("INSERT INTO a VALUES(:a, :b)", { ":a": 1, ":b": 2 }).changes,
       1
     );
   });
 
-  it("$ placeholder", function () {
+  it("$ placeholder", () => {
     assert.strictEqual(
-      this.db.run("INSERT INTO a VALUES($a, $b)", { $a: 1, $b: 2 }).changes,
+      db.run("INSERT INTO a VALUES($a, $b)", { $a: 1, $b: 2 }).changes,
       1
     );
   });
 
-  it("mixed placeholders", function () {
+  it("mixed placeholders", () => {
     assert.strictEqual(
-      this.db.run("INSERT INTO a VALUES(@a, :b)", { "@a": 1, ":b": 2 }).changes,
+      db.run("INSERT INTO a VALUES(@a, :b)", { "@a": 1, ":b": 2 }).changes,
       1
     );
   });
 
-  it("wrong placeholders", function () {
+  it("wrong placeholders", () => {
     assert.throws(
-      () => this.db.run("INSERT INTO a VALUES(@a, :b)", { ":a": 1, ":b": 2 }),
+      () => db.run("INSERT INTO a VALUES(@a, :b)", { ":a": 1, ":b": 2 }),
       {
         name: "SQLite3Error",
         message: 'Unknown binding parameter: ":a"',
@@ -289,19 +306,21 @@ describe("Insert values - placeholders", function () {
   });
 });
 
-describe("Insert values - types", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE TABLE a (w BLOB, x INTEGER, y REAL, z TEXT)");
+describe("Insert values - types", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE TABLE a (w BLOB, x INTEGER, y REAL, z TEXT)");
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("insert object", function () {
+  it("insert object", () => {
     assert.throws(
-      () => this.db.run("INSERT INTO a (w) VALUES (?)", [{ a: 1 }]),
+      () => db.run("INSERT INTO a (w) VALUES (?)", [{ a: 1 }]),
       {
         name: "SQLite3Error",
         message: 'Unsupported type for binding: "object"',
@@ -309,9 +328,9 @@ describe("Insert values - types", function () {
     );
   });
 
-  it("insert undefined", function () {
+  it("insert undefined", () => {
     assert.throws(
-      () => this.db.run("INSERT INTO a (x) VALUES (?)", [undefined]),
+      () => db.run("INSERT INTO a (x) VALUES (?)", [undefined]),
       {
         name: "SQLite3Error",
         message: 'Unsupported type for binding: "undefined"',
@@ -319,56 +338,56 @@ describe("Insert values - types", function () {
     );
   });
 
-  it("insert null", function () {
+  it("insert null", () => {
     assert.strictEqual(
-      this.db.run("INSERT INTO a (x) VALUES (?)", null).changes,
+      db.run("INSERT INTO a (x) VALUES (?)", null).changes,
       1
     );
   });
 
-  it("insert boolean", function () {
+  it("insert boolean", () => {
     assert.strictEqual(
-      this.db.run("INSERT INTO a (x) VALUES (?)", true).changes,
+      db.run("INSERT INTO a (x) VALUES (?)", true).changes,
       1
     );
     assert.strictEqual(
-      this.db.run("INSERT INTO a (x) VALUES (?)", false).changes,
-      1
-    );
-  });
-
-  it("insert number", function () {
-    assert.strictEqual(
-      this.db.run("INSERT INTO a (x) VALUES (?)", 1).changes,
-      1
-    );
-    assert.strictEqual(
-      this.db.run("INSERT INTO a (x) VALUES (?)", 2147483648).changes,
-      1
-    );
-    assert.strictEqual(
-      this.db.run("INSERT INTO a (y) VALUES (?)", 1.2).changes,
+      db.run("INSERT INTO a (x) VALUES (?)", false).changes,
       1
     );
   });
 
-  it("insert bigint", function () {
+  it("insert number", () => {
     assert.strictEqual(
-      this.db.run("INSERT INTO a (x) VALUES (?)", 1n).changes,
+      db.run("INSERT INTO a (x) VALUES (?)", 1).changes,
+      1
+    );
+    assert.strictEqual(
+      db.run("INSERT INTO a (x) VALUES (?)", 2147483648).changes,
+      1
+    );
+    assert.strictEqual(
+      db.run("INSERT INTO a (y) VALUES (?)", 1.2).changes,
       1
     );
   });
 
-  it("insert text", function () {
+  it("insert bigint", () => {
     assert.strictEqual(
-      this.db.run("INSERT INTO a (z) VALUES (?)", "a").changes,
+      db.run("INSERT INTO a (x) VALUES (?)", 1n).changes,
       1
     );
   });
 
-  it("insert BLOB as single parameter", function () {
+  it("insert text", () => {
+    assert.strictEqual(
+      db.run("INSERT INTO a (z) VALUES (?)", "a").changes,
+      1
+    );
+  });
+
+  it("insert BLOB as single parameter", () => {
     assert.throws(
-      () => this.db.run("INSERT INTO a (w) VALUES (?)", new Uint8Array(1)),
+      () => db.run("INSERT INTO a (w) VALUES (?)", new Uint8Array(1)),
       {
         name: "SQLite3Error",
         message: 'Unknown binding parameter: "0"',
@@ -376,93 +395,99 @@ describe("Insert values - types", function () {
     );
   });
 
-  it("insert BLOB", function () {
+  it("insert BLOB", () => {
     assert.strictEqual(
-      this.db.run("INSERT INTO a (w) VALUES (?)", [new Uint8Array(1)]).changes,
+      db.run("INSERT INTO a (w) VALUES (?)", [new Uint8Array(1)]).changes,
       1
     );
   });
 });
 
-describe("Insert values - missing parameters", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE TABLE a (x INTEGER)");
-    this.db.exec("CREATE TABLE b (x INTEGER NOT NULL)");
+describe("Insert values - missing parameters", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE TABLE a (x INTEGER)");
+    db.exec("CREATE TABLE b (x INTEGER NOT NULL)");
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("insert with missing parameter", function () {
-    assert.strictEqual(this.db.run("INSERT INTO a VALUES (?)").changes, 1);
+  it("insert with missing parameter", () => {
+    assert.strictEqual(db.run("INSERT INTO a VALUES (?)").changes, 1);
   });
 
-  it("insert with missing parameter NOT NULL", function () {
-    assert.throws(() => this.db.run("INSERT INTO b (x) VALUES (?)"), {
+  it("insert with missing parameter NOT NULL", () => {
+    assert.throws(() => db.run("INSERT INTO b (x) VALUES (?)"), {
       name: "SQLite3Error",
       message: "NOT NULL constraint failed: b.x",
     });
   });
 });
 
-describe("Query values", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE TABLE a (x TEXT, y TEXT)");
-    this.db.run("INSERT INTO a VALUES (?, ?)", ["x", "y"]);
-    this.db.run("INSERT INTO a VALUES (?, ?)", ["a", "b"]);
-    this.db.exec("CREATE TABLE b (x BLOB)");
-    this.db.run("INSERT INTO b VALUES (?)", [new Uint8Array()]);
-    this.db.run("INSERT INTO b VALUES (?)", [new Uint8Array([4, 5, 6])]);
+describe("Query values", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE TABLE a (x TEXT, y TEXT)");
+    db.run("INSERT INTO a VALUES (?, ?)", ["x", "y"]);
+    db.run("INSERT INTO a VALUES (?, ?)", ["a", "b"]);
+    db.exec("CREATE TABLE b (x BLOB)");
+    db.run("INSERT INTO b VALUES (?)", [new Uint8Array()]);
+    db.run("INSERT INTO b VALUES (?)", [new Uint8Array([4, 5, 6])]);
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("query all", function () {
-    assert.deepEqual(this.db.all("SELECT * from a"), [
+  it("query all", () => {
+    assert.deepEqual(db.all("SELECT * from a"), [
       { x: "x", y: "y" },
       { x: "a", y: "b" },
     ]);
   });
 
-  it("query expanded", function () {
+  it("query expanded", () => {
     assert.deepEqual(
-      this.db.get("SELECT * from a", undefined, { expand: true }),
+      db.get("SELECT * from a", undefined, { expand: true }),
       { a: { x: "x", y: "y" } }
     );
   });
 
-  it("expression and expand -> $", function () {
+  it("expression and expand -> $", () => {
     assert.deepEqual(
-      this.db.get("SELECT sin(0)", undefined, { expand: true }),
+      db.get("SELECT sin(0)", undefined, { expand: true }),
       { $: { "sin(0)": 0 } }
     );
   });
 
-  it("query BLOB", function () {
-    assert.deepEqual(this.db.all("SELECT * from b"), [
+  it("query BLOB", () => {
+    assert.deepEqual(db.all("SELECT * from b"), [
       { x: new Uint8Array() },
       { x: new Uint8Array([4, 5, 6]) },
     ]);
   });
 });
 
-describe("Prepared statements", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE TABLE a (x INTEGER)");
+describe("Prepared statements", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE TABLE a (x INTEGER)");
   });
 
-  after(function () {
-    if (this.db.isOpen) this.db.close();
+  after(() => {
+    if (db.isOpen) db.close();
   });
 
-  it("iterate", function () {
-    const stmt = this.db.prepare("SELECT * FROM (values (1), (2))");
+  it("iterate", () => {
+    const stmt = db.prepare("SELECT * FROM (values (1), (2))");
     assert.strictEqual(stmt.iterate().next().value.column1, 1);
 
     const i = stmt.iterate();
@@ -484,20 +509,20 @@ describe("Prepared statements", function () {
     stmt.finalize();
   });
 
-  it("iterate empty", function () {
-    const stmt = this.db.prepare("SELECT * FROM a");
+  it("iterate empty", () => {
+    const stmt = db.prepare("SELECT * FROM a");
     assert.strictEqual(stmt.iterate().next().done, true);
     stmt.finalize();
   });
 
-  it("database property", function () {
-    const stmt = this.db.prepare("SELECT 1");
-    assert.strictEqual(stmt.database, this.db);
+  it("database property", () => {
+    const stmt = db.prepare("SELECT 1");
+    assert.strictEqual(stmt.database, db);
     stmt.finalize();
   });
 
-  it("already finalized", function () {
-    const stmt = this.db.prepare("SELECT 1");
+  it("already finalized", () => {
+    const stmt = db.prepare("SELECT 1");
     stmt.finalize();
     assert.throws(() => stmt.run(), {
       name: "SQLite3Error",
@@ -505,15 +530,15 @@ describe("Prepared statements", function () {
     });
   });
 
-  it("empty statement", function () {
-    assert.throws(() => this.db.prepare(""), {
+  it("empty statement", () => {
+    assert.throws(() => db.prepare(""), {
       name: "SQLite3Error",
       message: "Nothing to prepare",
     });
   });
 
-  it("multiple calls to finalize()", function () {
-    const stmt = this.db.prepare("SELECT 1");
+  it("multiple calls to finalize()", () => {
+    const stmt = db.prepare("SELECT 1");
     stmt.finalize();
     assert.throws(() => stmt.finalize(), {
       name: "SQLite3Error",
@@ -521,9 +546,9 @@ describe("Prepared statements", function () {
     });
   });
 
-  it("database already closed", function () {
-    const stmt = this.db.prepare("SELECT 1");
-    this.db.close();
+  it("database already closed", () => {
+    const stmt = db.prepare("SELECT 1");
+    db.close();
     assert.throws(() => stmt.run(), {
       name: "SQLite3Error",
       message: "Database is closed",
@@ -532,18 +557,20 @@ describe("Prepared statements", function () {
   });
 });
 
-describe("User-defined functions", function () {
-  before(function () {
-    this.db = open();
-    this.db.function("identity", (x) => x);
-    this.db.function("throwerror", () => {
+describe("User-defined functions", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.function("identity", (x) => x);
+    db.function("throwerror", () => {
       throw "Custom error";
     });
-    this.db.function("undefinedreturn", () => undefined);
+    db.function("undefinedreturn", () => undefined);
     // test redefinition of existing function
-    this.db.function("undefinedreturn", () => undefined);
-    this.db.function("boolreturn", (x) => (x == 1 ? true : false));
-    this.db.function(
+    db.function("undefinedreturn", () => undefined);
+    db.function("boolreturn", (x) => (x == 1 ? true : false));
+    db.function(
       "objectreturn",
       () => {
         return {
@@ -554,128 +581,132 @@ describe("User-defined functions", function () {
     );
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("identity function - null", function () {
-    assert.strictEqual(this.db.get("SELECT identity(?) AS r", null).r, null);
-    assert.strictEqual(this.db.get("SELECT identity(NULL) AS r").r, null);
+  it("identity function - null", () => {
+    assert.strictEqual(db.get("SELECT identity(?) AS r", null).r, null);
+    assert.strictEqual(db.get("SELECT identity(NULL) AS r").r, null);
   });
 
-  it("identity function - boolean", function () {
-    assert.strictEqual(this.db.get("SELECT identity(?) AS r", true).r, 1);
-    assert.strictEqual(this.db.get("SELECT identity(?) AS r", false).r, 0);
+  it("identity function - boolean", () => {
+    assert.strictEqual(db.get("SELECT identity(?) AS r", true).r, 1);
+    assert.strictEqual(db.get("SELECT identity(?) AS r", false).r, 0);
   });
 
-  it("identity function - numbers", function () {
-    assert.strictEqual(this.db.get("SELECT identity(1) AS r").r, 1);
-    assert.strictEqual(this.db.get("SELECT identity(1.2) AS r").r, 1.2);
+  it("identity function - numbers", () => {
+    assert.strictEqual(db.get("SELECT identity(1) AS r").r, 1);
+    assert.strictEqual(db.get("SELECT identity(1.2) AS r").r, 1.2);
     assert.strictEqual(
-      this.db.get("SELECT identity(?) AS r", Number.MAX_SAFE_INTEGER + 1).r,
+      db.get("SELECT identity(?) AS r", Number.MAX_SAFE_INTEGER + 1).r,
       Number.MAX_SAFE_INTEGER + 1
     );
     assert.strictEqual(
-      this.db.get("SELECT identity(10000000000) AS r").r,
+      db.get("SELECT identity(10000000000) AS r").r,
       10000000000
     );
   });
 
-  it("identity function - bigint", function () {
-    assert.strictEqual(this.db.get("SELECT identity(?) AS r", 1n).r, 1);
+  it("identity function - bigint", () => {
+    assert.strictEqual(db.get("SELECT identity(?) AS r", 1n).r, 1);
     assert.strictEqual(
-      this.db.get(
+      db.get(
         "SELECT identity(?) AS r",
         BigInt(Number.MAX_SAFE_INTEGER) + 1n
       ).r,
       BigInt(Number.MAX_SAFE_INTEGER) + 1n
     );
     assert.strictEqual(
-      this.db.get("SELECT identity(100000000000000000) AS r").r,
+      db.get("SELECT identity(100000000000000000) AS r").r,
       100000000000000000n
     );
   });
 
-  it("identity function - BLOB", function () {
+  it("identity function - BLOB", () => {
     assert.deepEqual(
-      this.db.get("SELECT identity(?) AS r", [new Uint8Array([1, 2, 3])]).r,
+      db.get("SELECT identity(?) AS r", [new Uint8Array([1, 2, 3])]).r,
       new Uint8Array([1, 2, 3])
     );
     assert.deepEqual(
-      this.db.get("SELECT identity(?) AS r", [new Uint8Array([])]).r,
+      db.get("SELECT identity(?) AS r", [new Uint8Array([])]).r,
       new Uint8Array([])
     );
   });
 
-  it("identity function - text", function () {
-    assert.strictEqual(this.db.get("SELECT identity(?) AS r", "a").r, "a");
+  it("identity function - text", () => {
+    assert.strictEqual(db.get("SELECT identity(?) AS r", "a").r, "a");
   });
 
-  it("return boolean", function () {
-    assert.strictEqual(this.db.get("SELECT boolreturn(1) AS r").r, 1);
-    assert.strictEqual(this.db.get("SELECT boolreturn(0) AS r").r, 0);
+  it("return boolean", () => {
+    assert.strictEqual(db.get("SELECT boolreturn(1) AS r").r, 1);
+    assert.strictEqual(db.get("SELECT boolreturn(0) AS r").r, 0);
   });
 
-  it("return object", function () {
-    assert.throws(() => this.db.get("SELECT objectreturn()"), {
+  it("return object", () => {
+    assert.throws(() => db.get("SELECT objectreturn()"), {
       name: "SQLite3Error",
       message: 'Unsupported type for function result: "object"',
     });
   });
 
-  it("return undefined", function () {
-    assert.throws(() => this.db.get("SELECT undefinedreturn()"), {
+  it("return undefined", () => {
+    assert.throws(() => db.get("SELECT undefinedreturn()"), {
       name: "SQLite3Error",
       message: 'Unsupported type for function result: "undefined"',
     });
   });
 
-  it("throw error", function () {
-    assert.throws(() => this.db.get("SELECT throwerror()"), {
+  it("throw error", () => {
+    assert.throws(() => db.get("SELECT throwerror()"), {
       name: "SQLite3Error",
       message: "Custom error",
     });
   });
 });
 
-describe("Transaction", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE TABLE a (x INTEGER)");
+describe("Transaction", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE TABLE a (x INTEGER)");
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("inTransaction", function () {
-    const stmt = this.db.prepare("INSERT INTO a VALUES (?)");
-    assert.strictEqual(this.db.inTransaction, false);
-    this.db.exec("BEGIN TRANSACTION");
-    assert.strictEqual(this.db.inTransaction, true);
+  it("inTransaction", () => {
+    const stmt = db.prepare("INSERT INTO a VALUES (?)");
+    assert.strictEqual(db.inTransaction, false);
+    db.exec("BEGIN TRANSACTION");
+    assert.strictEqual(db.inTransaction, true);
     stmt.run(1);
-    this.db.exec("COMMIT");
-    assert.strictEqual(this.db.inTransaction, false);
+    db.exec("COMMIT");
+    assert.strictEqual(db.inTransaction, false);
     stmt.finalize();
   });
 });
 
-describe("FTS5", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE VIRTUAL TABLE t USING FTS5(a, b)");
-    this.db.exec(`INSERT INTO t (a, b) VALUES
+describe("FTS5", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE VIRTUAL TABLE t USING FTS5(a, b)");
+    db.exec(`INSERT INTO t (a, b) VALUES
       ('this is a test', 'another test'),
       ('second test', 'nothing'),
       ('nothing', 'really')`);
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("search", function () {
-    assert.deepEqual(this.db.all("SELECT * FROM t WHERE t MATCH 'test'"), [
+  it("search", () => {
+    assert.deepEqual(db.all("SELECT * FROM t WHERE t MATCH 'test'"), [
       {
         a: "this is a test",
         b: "another test",
@@ -688,70 +719,76 @@ describe("FTS5", function () {
   });
 });
 
-describe("DBSTAT virtual table", function () {
-  before(function () {
-    this.db = open();
+describe("DBSTAT virtual table", () => {
+  let db;
+
+  before(() => {
+    db = open();
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("exists", function () {
-    assert.strictEqual(this.db.get("SELECT * FROM dbstat"), null);
+  it("exists", () => {
+    assert.strictEqual(db.get("SELECT * FROM dbstat"), null);
   });
 });
 
-describe("Large BLOBs and strings", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE TABLE a (x BLOB)");
-    this.db.exec("CREATE TABLE b (x TEXT)");
-    this.db.exec("CREATE TABLE c (x TEXT)");
-    this.db.function("identity", (x) => x);
-    this.str = "a".repeat(100_000);
+describe("Large BLOBs and strings", () => {
+  const str = "a".repeat(100_000);
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE TABLE a (x BLOB)");
+    db.exec("CREATE TABLE b (x TEXT)");
+    db.exec("CREATE TABLE c (x TEXT)");
+    db.function("identity", (x) => x);
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("BLOB", function () {
-    const data = new TextEncoder().encode(this.str);
-    this.db.run("INSERT INTO a VALUES(?)", [data]);
-    assert.deepEqual(this.db.get("SELECT x FROM a").x, data);
+  it("BLOB", () => {
+    const data = new TextEncoder().encode(str);
+    db.run("INSERT INTO a VALUES(?)", [data]);
+    assert.deepEqual(db.get("SELECT x FROM a").x, data);
   });
 
-  it("string", function () {
-    this.db.run("INSERT INTO b VALUES(?)", this.str);
-    assert.strictEqual(this.db.get("SELECT x FROM b").x, this.str);
-    assert.strictEqual(this.db.get("SELECT ? AS r", this.str).r, this.str);
+  it("string", () => {
+    db.run("INSERT INTO b VALUES(?)", str);
+    assert.strictEqual(db.get("SELECT x FROM b").x, str);
+    assert.strictEqual(db.get("SELECT ? AS r", str).r, str);
   });
 
-  it("function", function () {
+  it("function", () => {
     assert.strictEqual(
-      this.db.get("SELECT identity(?) AS r", this.str).r,
-      this.str
+      db.get("SELECT identity(?) AS r", str).r,
+      str
     );
   });
 
-  it("exec", function () {
-    this.db.exec(`INSERT INTO c VALUES('${this.str}')`);
-    assert.strictEqual(this.db.get("SELECT x FROM c").x, this.str);
+  it("exec", () => {
+    db.exec(`INSERT INTO c VALUES('${str}')`);
+    assert.strictEqual(db.get("SELECT x FROM c").x, str);
   });
 });
 
-describe("Low-level errors", function () {
-  before(function () {
-    this.db = open();
+describe("Low-level errors", () => {
+  let db;
+
+  before(() => {
+    db = open();
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("invalid bind", function () {
-    const stmt = this.db.prepare("SELECT 1");
+  it("invalid bind", () => {
+    const stmt = db.prepare("SELECT 1");
     assert.throws(() => stmt._bindValue(0, 1), {
       name: "SQLite3Error",
       message: "column index out of range",
@@ -760,19 +797,21 @@ describe("Low-level errors", function () {
   });
 });
 
-describe("VFS", function () {
-  before(function () {
-    this.db = open();
-    this.db.exec("CREATE TABLE a (x INTEGER)");
+describe("VFS", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE TABLE a (x INTEGER)");
   });
 
-  after(function () {
-    this.db.close();
+  after(() => {
+    db.close();
   });
 
-  it("lock already exists", function () {
+  it("lock already exists", () => {
     fs.mkdirSync("test.db.lock");
-    assert.throws(() => this.db.run("INSERT INTO a VALUES (?)", 1), {
+    assert.throws(() => db.run("INSERT INTO a VALUES (?)", 1), {
       name: "SQLite3Error",
       message: "database is locked",
     });

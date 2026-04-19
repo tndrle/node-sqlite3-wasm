@@ -475,7 +475,7 @@ in JavaScript.
 ## Building
 
 [Docker](https://www.docker.com) and [npm](https://www.npmjs.com) are required
-for building. [Mocha](https://mochajs.org) is required to run tests.
+for building.
 
 To build _node-sqlite3-wasm_, simply run
 
