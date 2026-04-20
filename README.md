@@ -74,7 +74,7 @@ db.run("INSERT INTO employees VALUES (:n, :s)", {
   ":s": 50000,
 });
 
-const r = db.all("SELECT * from employees");
+const r = db.all("SELECT * FROM employees");
 console.log(r);
 // [ { name: 'James', salary: 50000 } ]
 

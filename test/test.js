@@ -446,7 +446,7 @@ describe("Query values", () => {
   });
 
   it("query all", () => {
-    assert.deepEqual(db.all("SELECT * from a"), [
+    assert.deepEqual(db.all("SELECT * FROM a"), [
       { x: "x", y: "y" },
       { x: "a", y: "b" },
     ]);
@@ -454,7 +454,7 @@ describe("Query values", () => {
 
   it("query expanded", () => {
     assert.deepEqual(
-      db.get("SELECT * from a", undefined, { expand: true }),
+      db.get("SELECT * FROM a", undefined, { expand: true }),
       { a: { x: "x", y: "y" } }
     );
   });
@@ -467,7 +467,7 @@ describe("Query values", () => {
   });
 
   it("query BLOB", () => {
-    assert.deepEqual(db.all("SELECT * from b"), [
+    assert.deepEqual(db.all("SELECT * FROM b"), [
       { x: new Uint8Array() },
       { x: new Uint8Array([4, 5, 6]) },
     ]);
@@ -487,7 +487,7 @@ describe("Prepared statements", () => {
   });
 
   it("iterate", () => {
-    const stmt = db.prepare("SELECT * FROM (values (1), (2))");
+    const stmt = db.prepare("SELECT * FROM (VALUES (1), (2))");
     assert.strictEqual(stmt.iterate().next().value.column1, 1);
 
     const i = stmt.iterate();
