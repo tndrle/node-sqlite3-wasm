@@ -15,10 +15,9 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm clean-install
       - run: npm test
   collect-test-results:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: tests
     if: always()
     steps:
