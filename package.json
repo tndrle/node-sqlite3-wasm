@@ -29,7 +29,7 @@
     "node-sqlite3-wasm.d.ts"
   ],
   "scripts": {
-    "_docker": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:5.0.6",
+    "_docker": "docker run --rm -v $(pwd):$(pwd) -w $(pwd) -u $(id -u):$(id -g) emscripten/emsdk:5.0.7",
     "test": "node --test",
     "test:coverage": "c8 -r html node --test",
     "build:dist": "npm run _docker make",
