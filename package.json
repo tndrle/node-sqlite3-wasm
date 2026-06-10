@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tndrle/node-sqlite3-wasm"
+    "url": "git+https://github.com/tndrle/node-sqlite3-wasm.git"
   },
   "keywords": [
     "nodejs",
