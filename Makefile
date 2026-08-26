@@ -43,7 +43,6 @@ LINK_FLAGS = \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s ENVIRONMENT=node \
 	-s FILESYSTEM=0 \
-	-s WASM_BIGINT \
 	-s WASM_ASYNC_COMPILATION=0
 
 all: dist/node-sqlite3-wasm.js
