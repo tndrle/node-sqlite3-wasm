@@ -164,6 +164,10 @@ describe("Query basic values", () => {
       db.get(`SELECT (${Number.MAX_SAFE_INTEGER} + 1) AS x`).x,
       BigInt(Number.MAX_SAFE_INTEGER) + 1n
     );
+
+    const expected = BigInt(Number.MAX_SAFE_INTEGER) + 2n;
+    db.run("INSERT INTO a VALUES(?)", [expected]);
+    assert.strictEqual(db.get("SELECT x FROM a").x, expected);
   });
 
   it("string", () => {
