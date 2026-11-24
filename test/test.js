@@ -739,6 +739,192 @@ describe("DBSTAT virtual table", () => {
   });
 });
 
+describe("FTS3", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE VIRTUAL TABLE t USING FTS3(a, b)");
+    db.exec(`INSERT INTO t (a, b) VALUES
+      ('this is a test', 'another test'),
+      ('second test', 'nothing'),
+      ('nothing', 'really')`);
+  });
+
+  after(() => {
+    db.close();
+  });
+
+  it("search", () => {
+    assert.deepEqual(db.all("SELECT * FROM t WHERE t MATCH 'test'"), [
+      {
+        a: "this is a test",
+        b: "another test",
+      },
+      {
+        a: "second test",
+        b: "nothing",
+      },
+    ]);
+  });
+
+  it("enhanced query syntax", () => {
+    assert.deepEqual(
+      db.all("SELECT a FROM t WHERE t MATCH '(another OR nothing) NOT second'"),
+      [{ a: "this is a test" }, { a: "nothing" }]
+    );
+    assert.deepEqual(
+      db.all("SELECT a FROM t WHERE t MATCH 'test AND nothing'"),
+      [{ a: "second test" }]
+    );
+  });
+});
+
+describe("FTS4", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE VIRTUAL TABLE t USING FTS4(a, b)");
+    db.exec(`INSERT INTO t (a, b) VALUES
+      ('this is a test', 'another test'),
+      ('second test', 'nothing'),
+      ('nothing', 'really')`);
+  });
+
+  after(() => {
+    db.close();
+  });
+
+  it("search", () => {
+    assert.deepEqual(db.all("SELECT * FROM t WHERE t MATCH 'test'"), [
+      {
+        a: "this is a test",
+        b: "another test",
+      },
+      {
+        a: "second test",
+        b: "nothing",
+      },
+    ]);
+  });
+
+  it("offsets", () => {
+    assert.deepEqual(
+      db.get("SELECT offsets(t) AS o FROM t WHERE t MATCH 'second'"),
+      { o: "0 0 0 6" }
+    );
+  });
+
+  it("fts4aux", () => {
+    db.exec("CREATE VIRTUAL TABLE terms USING fts4aux(t)");
+    assert.deepEqual(
+      db.all(
+        `SELECT term, documents, occurrences FROM terms
+         WHERE col = '*' AND term IN ('nothing', 'test') ORDER BY term`
+      ),
+      [
+        { term: "nothing", documents: 2, occurrences: 2 },
+        { term: "test", documents: 2, occurrences: 3 },
+      ]
+    );
+  });
+
+  it("external content table", () => {
+    db.exec("CREATE TABLE docs (id INTEGER PRIMARY KEY, body TEXT)");
+    db.exec(`INSERT INTO docs (body) VALUES
+      ('the quick brown fox'),
+      ('the lazy dog')`);
+    db.exec("CREATE VIRTUAL TABLE ext USING FTS4(content='docs', body)");
+    db.exec("INSERT INTO ext (ext) VALUES ('rebuild')");
+    assert.deepEqual(
+      db.all("SELECT docid, body FROM ext WHERE ext MATCH 'lazy'"),
+      [{ docid: 2, body: "the lazy dog" }]
+    );
+  });
+
+  it("contentless table", () => {
+    db.exec("CREATE VIRTUAL TABLE cl USING FTS4(content='', body)");
+    db.exec(`INSERT INTO cl (docid, body) VALUES
+      (10, 'the quick brown fox'),
+      (20, 'the lazy dog')`);
+    assert.deepEqual(
+      db.all("SELECT docid FROM cl WHERE cl MATCH 'quick'"),
+      [{ docid: 10 }]
+    );
+  });
+});
+
+describe("R*Tree", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE VIRTUAL TABLE r USING rtree(id, minX, maxX, minY, maxY)");
+    db.exec(`INSERT INTO r VALUES
+      (1, 0, 10, 0, 10),
+      (2, 5, 15, 5, 15),
+      (3, 20, 30, 20, 30)`);
+  });
+
+  after(() => {
+    db.close();
+  });
+
+  it("query", () => {
+    assert.deepEqual(
+      db.all(
+        "SELECT id FROM r WHERE maxX >= 8 AND minX <= 12 AND maxY >= 8 AND minY <= 12 ORDER BY id"
+      ),
+      [{ id: 1 }, { id: 2 }]
+    );
+  });
+});
+
+describe("Geopoly", () => {
+  let db;
+
+  before(() => {
+    db = open();
+    db.exec("CREATE VIRTUAL TABLE g USING geopoly(name)");
+    db.exec(`INSERT INTO g (_shape, name) VALUES
+      ('[[0,0],[2,0],[2,2],[0,2],[0,0]]', 'small'),
+      ('[[0,0],[10,0],[10,10],[0,10],[0,0]]', 'large')`);
+  });
+
+  after(() => {
+    db.close();
+  });
+
+  it("area", () => {
+    assert.deepEqual(
+      db.all("SELECT name, geopoly_area(_shape) AS area FROM g ORDER BY name"),
+      [
+        { name: "large", area: 100 },
+        { name: "small", area: 4 },
+      ]
+    );
+  });
+
+  it("contains point", () => {
+    assert.deepEqual(
+      db.all(
+        "SELECT name FROM g WHERE geopoly_contains_point(_shape, 5, 5) ORDER BY name"
+      ),
+      [{ name: "large" }]
+    );
+  });
+
+  it("overlap", () => {
+    assert.deepEqual(
+      db.all(
+        "SELECT name FROM g WHERE geopoly_overlap(_shape, '[[1,1],[3,1],[3,3],[1,3],[1,1]]') ORDER BY name"
+      ),
+      [{ name: "large" }, { name: "small" }]
+    );
+  });
+});
+
 describe("Large BLOBs and strings", () => {
   const str = "a".repeat(100_000);
   let db;
